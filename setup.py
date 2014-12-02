@@ -16,7 +16,7 @@ setup(
 )
 
 try:
-    from homeinfo.crm import __tables__
+    from filedb import __tables__
 except:
     print('Cannot import __tables__')
 else:
