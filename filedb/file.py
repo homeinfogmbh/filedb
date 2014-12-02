@@ -29,7 +29,7 @@ class File(FileDBModel):
     """The file's MIME type"""
     _sha256sum = CharField(69, db_column='sha256sum')
     """A SHA-256 checksum"""
-    _size = IntegerField()
+    _size = IntegerField(11)
     """The file's size in bytes"""
 
     def __init__(self, filename=None, basedir='/srv/files', suffix=None):
@@ -67,14 +67,26 @@ class File(FileDBModel):
         """An alias to filename"""
         return self.filename
 
-    def _read(self):
-        """Reads the respective file's content"""
+    @property
+    def data(self):
+        """Returns the file's content"""
         with open(self.filename, 'rb') as f:
             return f.read()
 
+    @property
+    def consistent(self):
+        """Checks for consistency"""
+        data = self.data
+        sha256sum = str(sha256(data).hexdigest())
+        size = len(data)
+        if sha256sum == self.sha256sum:
+            if size == self.size:
+                return True
+        return False
+
     def read(self):
         """Reads the file's content safely"""
-        data = self._read()
+        data = self.data
         sha256sum = str(sha256(data).hexdigest())
         size = len(data)
         if sha256sum == self.sha256sum:
