@@ -29,7 +29,7 @@ class File(FileDBModel):
     """The file's MIME type"""
     _sha256sum = CharField(69, db_column='sha256sum')
     """A SHA-256 checksum"""
-    _size = IntegerField(11, db_column='size')
+    _size = IntegerField(db_column='size')
     """The file's size in bytes"""
 
     def __init__(self, filename=None, basedir='/srv/files', suffix=None):
