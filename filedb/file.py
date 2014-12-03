@@ -5,10 +5,9 @@ from .abc import FileDBModel
 from .error import ChecksumMismatch, FilesizeMismatch
 from homeinfo.util import MIMEUtil
 from peewee import CharField, IntegerField
-from os.path import join, basename
+from os.path import join, basename, dirname
 from os import unlink
 from hashlib import sha256
-from uuid import uuid4
 
 __date__ = '02.12.2014'
 __author__ = 'Richard Neumann <r.neumann@homeinfo.de>'
@@ -19,12 +18,10 @@ class File(FileDBModel):
     """
     A file entry
     """
-    basedir = CharField(255)
+    dirname = CharField(255)
     """The base directory of the file"""
     basename = CharField(255)
-    """The file's basename"""
-    suffix = CharField(8, null=True)
-    """An optional file suffix"""
+    """The file's base name"""
     mimetype = CharField(255)
     """The file's MIME type"""
     _sha256sum = CharField(69, db_column='sha256sum')
@@ -32,22 +29,18 @@ class File(FileDBModel):
     _size = IntegerField(db_column='size')
     """The file's size in bytes"""
 
-    def __init__(self, path=None, basedir='/tmp', suffix=None):
-        """Initializes a file"""
-        self.basename = uuid4() if path is None else basename(path)
-        self.basedir = join('' if basedir is None else basedir,
-                            '' if path is None else basedir(path))
-        self.suffix = suffix
-
-    @property
-    def extension(self):
-        """Returns the appropriate file extension from the suffix"""
-        if self.suffix is None:
-            return ''
-        elif self.suffix.startwith('.'):
-            return self.suffix
-        else:
-            return '.'.join(['', self.suffix])
+    @classmethod
+    def add(cls, path, force_insert=False):
+        """Add a new File"""
+        record = cls()
+        record.basename = basename(path)
+        record.dirname = dirname(path)
+        record.mimetype = MIMEUtil.getmime(path)
+        with open(path, 'rb') as file:
+            data = file.read()
+        record._sha256sum = str(sha256(data).hexdigest())
+        record._size = len(data)
+        record.save(force_insert=force_insert)
 
     @property
     def sha256sum(self):
@@ -62,7 +55,7 @@ class File(FileDBModel):
     @property
     def name(self):
         """The file's full name / path"""
-        return join(self.basedir, ''.join([self.basename, self.extension]))
+        return join(self.dirname, self.basename)
 
     @property
     def path(self):
@@ -103,16 +96,6 @@ class File(FileDBModel):
         """Removes the file"""
         unlink(self.name)
         return self.delete_instance(recursive, delete_nullable)
-
-    def write(self, data, force_insert=False):
-        """Writes data to the file"""
-        with open(self.name, 'wb') as f:
-            f.write(data)
-        self.suffix = MIMEUtil.getext(self.name)
-        self.mimetype = MIMEUtil.getmime(self.name)
-        self._sha256sum = str(sha256(data).hexdigest())
-        self._size = len(data)
-        self.save(force_insert=force_insert)
 
     def __str__(self):
         """Converts the file to a string"""
