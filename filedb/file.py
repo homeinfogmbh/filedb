@@ -28,19 +28,28 @@ class File(FileDBModel):
     """A SHA-256 checksum"""
     _size = IntegerField(db_column='size')
     """The file's size in bytes"""
+    _hardlinks = IntegerField(db_column='hardlinks')
+    """Amount of hardlinks on this file"""
 
     @classmethod
-    def add(cls, path, force_insert=False):
+    def add(cls, path):
         """Add a new File"""
-        record = cls()
-        record.basename = basename(path)
-        record.dirname = dirname(path)
-        record.mimetype = MIMEUtil.getmime(path)
         with open(path, 'rb') as file:
             data = file.read()
-        record._sha256sum = str(sha256(data).hexdigest())
-        record._size = len(data)
-        record.save(force_insert=force_insert)
+        sha256sum = str(sha256(data).hexdigest())
+        for record in cls.select().limit(1).where(cls.sha256sum
+                                                  == sha256sum):
+            record._hardlinks += 1
+        else:
+            record = cls()
+            record.basename = basename(path)
+            record.dirname = dirname(path)
+            record.mimetype = MIMEUtil.getmime(path)
+            record._sha256sum = sha256sum
+            record._size = len(data)
+            record._hardlinks = 1
+        record.save()
+        return record
 
     @property
     def sha256sum(self):
@@ -51,6 +60,11 @@ class File(FileDBModel):
     def size(self):
         """Returns the file's size"""
         return self._size
+
+    @property
+    def hardlinks(self):
+        """Returns the amount of hardlinks"""
+        return self._hardlinks
 
     @property
     def name(self):
@@ -92,10 +106,18 @@ class File(FileDBModel):
         else:
             raise ChecksumMismatch(sha256sum, self.sha256sum)
 
-    def remove(self,  recursive=False, delete_nullable=False):
+    def remove(self):
         """Removes the file"""
+        self._hardlinks += -1
+        if not self.hardlinks:
+            self._remove()
+        else:
+            self.save()
+
+    def _remove(self):
+        """Actually removes the file"""
         unlink(self.name)
-        return self.delete_instance(recursive, delete_nullable)
+        return self.delete_instance()
 
     def __str__(self):
         """Converts the file to a string"""
