@@ -5,7 +5,7 @@ from .abc import FileDBModel
 from .error import ChecksumMismatch, FilesizeMismatch
 from homeinfo.util import MIMEUtil
 from peewee import CharField, IntegerField
-from os.path import join
+from os.path import join, basename
 from os import unlink
 from hashlib import sha256
 from uuid import uuid4
@@ -23,7 +23,7 @@ class File(FileDBModel):
     """The base directory of the file"""
     basename = CharField(255)
     """The file's basename"""
-    suffix = CharField(8, null=True)
+    _suffix = CharField(8, null=True, db_column='suffix')
     """An optional file suffix"""
     mimetype = CharField(255)
     """The file's MIME type"""
@@ -32,16 +32,22 @@ class File(FileDBModel):
     _size = IntegerField(db_column='size')
     """The file's size in bytes"""
 
-    def __init__(self, filename=None, basedir='/srv/files', suffix=None):
+    def __init__(self, path=None, basedir=None, suffix=None):
         """Initializes a file"""
-        self.filename = uuid4() if filename is None else filename
-        self.basedir = basedir
-        self.suffix = suffix
+        self.basename = uuid4() if path is None else basename(path)
+        self.basedir = join('' if basedir is None else basedir,
+                            '' if path is None else basedir(path))
+        self._suffix = suffix
 
     @property
-    def _suffix(self):
+    def suffix(self):
         """Returns an enforced string version of the suffix"""
-        return '' if self.suffix is None else self.suffix
+        if self._suffix is None:
+            return ''
+        elif self._suffix.startwith('.'):
+            return self._suffix
+        else:
+            return '.'.join(['', self._suffix])
 
     @property
     def sha256sum(self):
@@ -56,11 +62,7 @@ class File(FileDBModel):
     @property
     def filename(self):
         """The file's full name / path"""
-        return join(self.basedir,
-                    (''.join([self.filename, self._suffix])
-                     if self._suffix.startswith('.')
-                     else '.'.join([self.filename, self._suffix]))
-                    if self.suffix else self.filename)
+        return join(self.basedir, ''.join([self.filename, self.suffix]))
 
     @property
     def path(self):
@@ -97,10 +99,10 @@ class File(FileDBModel):
         else:
             raise ChecksumMismatch(sha256sum, self.sha256sum)
 
-    def remove(self):
+    def remove(self,  recursive=False, delete_nullable=False):
         """Removes the file"""
         unlink(self.filename)
-        self.delete_instance()
+        return self.delete_instance(recursive, delete_nullable)
 
     def write(self, data, force_insert=False):
         """Writes data to the file"""
