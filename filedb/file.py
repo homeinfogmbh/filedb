@@ -40,7 +40,7 @@ class File(FileDBModel):
         self.suffix = suffix
 
     @property
-    def fileext(self):
+    def extension(self):
         """Returns the appropriate file extension from the suffix"""
         if self.suffix is None:
             return ''
@@ -60,19 +60,19 @@ class File(FileDBModel):
         return self._size
 
     @property
-    def filename(self):
+    def name(self):
         """The file's full name / path"""
-        return join(self.basedir, ''.join([self.filename, self.fileext]))
+        return join(self.basedir, ''.join([self.basename, self.extension]))
 
     @property
     def path(self):
-        """An alias to filename"""
-        return self.filename
+        """An alias to self.name"""
+        return self.name
 
     @property
     def data(self):
         """Returns the file's content"""
-        with open(self.filename, 'rb') as f:
+        with open(self.name, 'rb') as f:
             return f.read()
 
     @property
@@ -101,19 +101,19 @@ class File(FileDBModel):
 
     def remove(self,  recursive=False, delete_nullable=False):
         """Removes the file"""
-        unlink(self.filename)
+        unlink(self.name)
         return self.delete_instance(recursive, delete_nullable)
 
     def write(self, data, force_insert=False):
         """Writes data to the file"""
-        with open(self.filename, 'wb') as f:
+        with open(self.name, 'wb') as f:
             f.write(data)
-        self.suffix = MIMEUtil.getext(self.filename)
-        self.mimetype = MIMEUtil.getmime(self.filename)
+        self.suffix = MIMEUtil.getext(self.name)
+        self.mimetype = MIMEUtil.getmime(self.name)
         self._sha256sum = str(sha256(data).hexdigest())
         self._size = len(data)
         self.save(force_insert=force_insert)
 
     def __str__(self):
         """Converts the file to a string"""
-        return self.filename
+        return self.name
