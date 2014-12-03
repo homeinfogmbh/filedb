@@ -23,7 +23,7 @@ class File(FileDBModel):
     """The base directory of the file"""
     basename = CharField(255)
     """The file's basename"""
-    _suffix = CharField(8, null=True, db_column='suffix')
+    suffix = CharField(8, null=True)
     """An optional file suffix"""
     mimetype = CharField(255)
     """The file's MIME type"""
@@ -32,22 +32,22 @@ class File(FileDBModel):
     _size = IntegerField(db_column='size')
     """The file's size in bytes"""
 
-    def __init__(self, path=None, basedir=None, suffix=None):
+    def __init__(self, path=None, basedir='/tmp', suffix=None):
         """Initializes a file"""
         self.basename = uuid4() if path is None else basename(path)
         self.basedir = join('' if basedir is None else basedir,
                             '' if path is None else basedir(path))
-        self._suffix = suffix
+        self.suffix = suffix
 
     @property
-    def suffix(self):
-        """Returns an enforced string version of the suffix"""
-        if self._suffix is None:
+    def fileext(self):
+        """Returns the appropriate file extension from the suffix"""
+        if self.suffix is None:
             return ''
-        elif self._suffix.startwith('.'):
-            return self._suffix
+        elif self.suffix.startwith('.'):
+            return self.suffix
         else:
-            return '.'.join(['', self._suffix])
+            return '.'.join(['', self.suffix])
 
     @property
     def sha256sum(self):
@@ -62,7 +62,7 @@ class File(FileDBModel):
     @property
     def filename(self):
         """The file's full name / path"""
-        return join(self.basedir, ''.join([self.filename, self.suffix]))
+        return join(self.basedir, ''.join([self.filename, self.fileext]))
 
     @property
     def path(self):
