@@ -32,27 +32,35 @@ class File(FileDBModel):
     """Amount of hardlinks on this file"""
 
     @classmethod
-    def add(cls, path, mimetype=None):
+    def add(cls, path, mimetype=None, unique=True):
         """Add a new file uniquely"""
+        if unique:
+            with open(path, 'rb') as file:
+                data = file.read()
+            sha256sum = str(sha256(data).hexdigest())
+            for record in cls.select().limit(1).where(cls.sha256sum
+                                                      == sha256sum):
+                record._hardlinks += 1
+                record.save()
+                return record
+        return cls._add(path, mimetype=mimetype)
+
+    @classmethod
+    def _add(cls, path, mimetype=None):
+        """Forcibly adds a file"""
         with open(path, 'rb') as file:
             data = file.read()
         sha256sum = str(sha256(data).hexdigest())
-        for record in cls.select().limit(1).where(cls.sha256sum
-                                                  == sha256sum):
-            record._hardlinks += 1
-            break
+        record = cls()
+        record.basename = basename(path)
+        record.dirname = dirname(path)
+        if mimetype is None:
+            record.mimetype = MIMEUtil.getmime(path)
         else:
-            record = cls()
-            record.basename = basename(path)
-            record.dirname = dirname(path)
-            if mimetype is None:
-                record.mimetype = MIMEUtil.getmime(path)
-            else:
-                record.mimetype = mimetype
-            record._sha256sum = sha256sum
-            record._size = len(data)
-            record._hardlinks = 1
-        record.save()
+            record.mimetype = mimetype
+        record._sha256sum = sha256sum
+        record._size = len(data)
+        record._hardlinks = 1
         return record
 
     @property
