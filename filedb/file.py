@@ -33,7 +33,7 @@ class File(FileDBModel):
 
     @classmethod
     def add(cls, path, mimetype=None):
-        """Add a new File"""
+        """Add a new file uniquely"""
         with open(path, 'rb') as file:
             data = file.read()
         sha256sum = str(sha256(data).hexdigest())
