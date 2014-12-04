@@ -6,7 +6,7 @@ __author__ = 'Richard Neumann <r.neumann@homeinfo.de>'
 __all__ = ['ChecksumMismatch', 'FilesizeMismatch']
 
 
-class MismatchError(Exception):
+class _MismatchError(Exception):
     """Indicates inconsistency between actual and target values"""
     def __init__(self, actual_value, target_value):
         """Sets acual and target value"""
@@ -30,11 +30,11 @@ class MismatchError(Exception):
                           ' '.join(['    target:', str(self.target_value)])])
 
 
-class ChecksumMismatch(MismatchError):
+class ChecksumMismatch(_MismatchError):
     """Indicates inconsistency between file checksums"""
     pass
 
 
-class FilesizeMismatch(MismatchError):
+class FilesizeMismatch(_MismatchError):
     """Indicates inconsistency between file checksums"""
     pass
