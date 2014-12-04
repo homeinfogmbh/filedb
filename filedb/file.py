@@ -2,7 +2,6 @@
 Abstract base classes for HOMEINFO's file database
 """
 from .abc import FileDBModel
-from .error import ChecksumMismatch, FilesizeMismatch
 from homeinfo.util import MIMEUtil
 from peewee import CharField, IntegerField
 from os.path import join, basename, dirname
@@ -11,7 +10,31 @@ from hashlib import sha256
 
 __date__ = '02.12.2014'
 __author__ = 'Richard Neumann <r.neumann@homeinfo.de>'
-__all__ = ['File']
+__all__ = ['ChecksumMismatch', 'File']
+
+
+class ChecksumMismatch(Exception):
+    """Indicates inconsistency between file checksums"""
+    def __init__(self, actual_value, target_value):
+        """Sets acual and target value"""
+        self._actual_value = actual_value
+        self._target_value = target_value
+
+    @property
+    def actual_value(self):
+        """Returns the actual value"""
+        return self._actual_value
+
+    @property
+    def target_value(self):
+        """Returns the target value"""
+        return self._target_value
+
+    def __str__(self):
+        """Converts to a string"""
+        return '\n'.join(['File checksums do not match',
+                          ' '.join(['    actual:', str(self.actual_value)]),
+                          ' '.join(['    target:', str(self.target_value)])])
 
 
 class File(FileDBModel):
@@ -97,24 +120,19 @@ class File(FileDBModel):
     @property
     def consistent(self):
         """Checks for consistency"""
-        data = self.data
-        sha256sum = str(sha256(data).hexdigest())
-        size = len(data)
-        if sha256sum == self.sha256sum:
-            if size == self.size:
-                return True
-        return False
+        try:
+            self.read()
+        except ChecksumMismatch:
+            return False
+        else:
+            return True
 
     def read(self):
         """Reads the file's content safely"""
         data = self.data
         sha256sum = str(sha256(data).hexdigest())
-        size = len(data)
         if sha256sum == self.sha256sum:
-            if size == self.size:
-                return data
-            else:
-                raise FilesizeMismatch(size, self.size)
+            return data
         else:
             raise ChecksumMismatch(sha256sum, self.sha256sum)
 
