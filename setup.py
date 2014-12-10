@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 from distutils.core import setup
+from peewee import OperationalError
 
 setup(
     name='homeinfo',
@@ -17,8 +18,8 @@ setup(
 
 try:
     from filedb import __tables__
-except:
-    print('Cannot import __tables__')
+except OperationalError:
+    print('WARNING: No database access - Won\'t create any tables')
 else:
     for table in __tables__:
         print('Creating table', table)
