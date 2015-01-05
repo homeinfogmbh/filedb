@@ -1,5 +1,5 @@
 """
-Basic HIS system configuration
+Global virtual file database configuration
 """
 from configparser import ConfigParser
 
