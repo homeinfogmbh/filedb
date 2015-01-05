@@ -1,5 +1,5 @@
 """
-Global virtual file database configuration
+Configuration for HOMEINFO's global file database
 """
 from configparser import ConfigParser
 

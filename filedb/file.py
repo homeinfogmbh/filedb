@@ -1,5 +1,5 @@
 """
-Abstract base classes for HOMEINFO's file database
+Models for HOMEINFO's global file database
 """
 from .abc import FileDBModel
 from homeinfo.util import MIMEUtil
