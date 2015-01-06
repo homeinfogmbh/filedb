@@ -4,8 +4,8 @@ Models for HOMEINFO's global file database
 from .abc import FileDBModel
 from homeinfo.util import MIMEUtil
 from peewee import CharField, IntegerField
-from os.path import basename, dirname
-from os import unlink
+from os.path import basename, dirname, join
+from os import unlink, rename
 from hashlib import sha256
 from base64 import b64encode
 
@@ -95,6 +95,12 @@ class File(FileDBModel):
         """Returns the file's name"""
         return self._name
 
+    @name.setter
+    def name(self, name):
+        """Sets the file's name"""
+        rename(self.name, name)
+        self._name = name
+
     @property
     def mimetype(self):
         """Returns the file's MIME type"""
@@ -117,24 +123,46 @@ class File(FileDBModel):
 
     @property
     def path(self):
-        """An alias to self.name"""
+        """Gets the file name"""
         return self.name
+
+    @path.setter
+    def path(self, path):
+        """Sets the file name"""
+        self.name = path
 
     @property
     def basename(self):
         """Returns the file's basename"""
         return basename(self.name)
 
+    @basename.setter
+    def basename(self, basename):
+        """Sets the file's basename"""
+        self.name = join(self.dirname, basename)
+
     @property
     def dirname(self):
         """Returns the file's dirname"""
         return dirname(self.name)
+
+    @dirname.setter
+    def dirname(self, dirname):
+        """Sets the file's dirname"""
+        self.name = join(dirname, self.basename)
 
     @property
     def data(self):
         """Returns the file's content"""
         with open(self.name, 'rb') as f:
             return f.read()
+
+    @data.setter
+    def data(self, data):
+        """Sets the file's data and MIME type"""
+        self._mimetype = MIMEUtil.getmime(data)
+        with open(self.name, 'wb') as f:
+            return f.write(data)
 
     @property
     def b64data(self):
