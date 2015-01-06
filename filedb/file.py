@@ -16,15 +16,15 @@ __all__ = ['ChecksumMismatch', 'sha256sum', 'File']
 
 class ChecksumMismatch(Exception):
     """Indicates inconsistency between file checksums"""
-    def __init__(self, target_value, actual_value):
-        """Sets target and actual value"""
-        self._target_value = target_value
+    def __init__(self, expected_value, actual_value):
+        """Sets expected and actual value"""
+        self._expected_value = expected_value
         self._actual_value = actual_value
 
     @property
-    def target_value(self):
-        """Returns the target value"""
-        return self._target_value
+    def expected_value(self):
+        """Returns the expected value"""
+        return self._expected_value
 
     @property
     def actual_value(self):
@@ -34,8 +34,10 @@ class ChecksumMismatch(Exception):
     def __str__(self):
         """Converts to a string"""
         return '\n'.join(['File checksums do not match',
-                          ' '.join(['    target:', str(self.target_value)]),
-                          ' '.join(['    actual:', str(self.actual_value)])])
+                          ' '.join(['    expected:',
+                                    str(self.expected_value)]),
+                          ' '.join(['    actual:',
+                                    str(self.actual_value)])])
 
 
 def sha256sum(data):
