@@ -36,7 +36,7 @@ class ChecksumMismatch(Exception):
         return '\n'.join(['File checksums do not match',
                           ' '.join(['    expected:',
                                     str(self.expected_value)]),
-                          ' '.join(['    actual:',
+                          ' '.join(['    actual:  ',
                                     str(self.actual_value)])])
 
 
