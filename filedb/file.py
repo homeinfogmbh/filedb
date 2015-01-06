@@ -156,7 +156,7 @@ class File(FileDBModel):
         if cs == self.sha256sum:
             return data
         else:
-            raise ChecksumMismatch(cs, self.sha256sum)
+            raise ChecksumMismatch(self.sha256sum, cs)
 
     def remove(self):
         """Removes the file"""
