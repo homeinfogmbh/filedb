@@ -59,17 +59,14 @@ class File(FileDBModel):
     """Amount of hardlinks on this file"""
 
     @classmethod
-    def add(cls, name, mimetype=None, unique=True):
+    def add(cls, name, mimetype=None):
         """Add a new file uniquely"""
-        if unique:
-            with open(name, 'rb') as file:
-                cs = sha256sum(file.read())
-            for record in cls.select().limit(1).where(cls.sha256sum == cs):
-                record._hardlinks += 1
-                record.save()
-                return record
-            else:
-                return cls._add(name, mimetype=mimetype)
+        with open(name, 'rb') as file:
+            cs = sha256sum(file.read())
+        for record in cls.select().limit(1).where(cls.sha256sum == cs):
+            record._hardlinks += 1
+            record.save()
+            return record
         else:
             return cls._add(name, mimetype=mimetype)
 
