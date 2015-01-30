@@ -110,11 +110,6 @@ class File(FileDBModel):
         self.last_access = datetime.now()
         self.save()
 
-    def read(self, count=None):
-        """Delegate reading to file handler"""
-        with open(self._path, 'rb') as f:
-            return f.read(count)
-
     @property
     def data(self):
         """Reads the file's content safely"""
@@ -140,8 +135,14 @@ class File(FileDBModel):
         else:
             return True
 
+    def read(self, count=None):
+        """Delegate reading to file handler"""
+        self._touch()
+        with open(self._path, 'rb') as f:
+            return f.read(count)
+
     def unlink(self):
-        """Unlinks the file"""
+        """Unlinks / removes the file"""
         self._hardlinks += -1
         if not self.hardlinks:
             unlink(self.name)
@@ -150,7 +151,7 @@ class File(FileDBModel):
             self.save()
 
     def remove(self):
-        """Removes the file"""
+        """Alias to unlink"""
         return self.unlink()
 
     def __str__(self):
