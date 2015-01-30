@@ -1,13 +1,14 @@
-"""
-Models for HOMEINFO's global file database
-"""
-from .abc import FileDBModel
-from homeinfo.util import MIMEUtil
-from peewee import CharField, IntegerField
-from os.path import basename, dirname, join
-from os import unlink, rename
-from hashlib import sha256
+"""Models for HOMEINFO's global file database"""
+
+from os import unlink
+from hashlib import sha512
 from base64 import b64encode
+from datetime import datetime
+from os.path import join
+from peewee import CharField, IntegerField, DoesNotExist, DateTimeField
+from homeinfo.util import MIMEUtil
+from .abc import FileDBModel
+from .config import fs
 
 __date__ = '02.12.2014'
 __author__ = 'Richard Neumann <r.neumann@homeinfo.de>'
@@ -40,129 +41,89 @@ class ChecksumMismatch(Exception):
                                     str(self.actual_value)])])
 
 
-def sha256sum(data):
+def sha512sum(data):
     """Creates a checksum string of the respective data"""
-    return str(sha256(data).hexdigest())
+    return str(sha512(data).hexdigest())
 
 
 class File(FileDBModel):
-    """
-    A file entry
-    """
-    _name = CharField(255, db_column='name')
-    """The file's full path"""
-    _mimetype = CharField(255, db_column='mimetype')
+    """A file entry"""
+
+    mimetype = CharField(255)
     """The file's MIME type"""
-    _sha256sum = CharField(69, db_column='sha256sum')
-    """A SHA-256 checksum"""
-    _size = IntegerField(db_column='size')
+    sha512sum = CharField(128)
+    """A SHA-512 checksum"""
+    size = IntegerField()
     """The file's size in bytes"""
-    _hardlinks = IntegerField(db_column='hardlinks')
+    hardlinks = IntegerField()
     """Amount of hardlinks on this file"""
+    created = DateTimeField()
+    """When was the file stored in the database"""
+    last_access = DateTimeField()
+    """When has the file been read the last time"""
+    accessed = IntegerField()
+    """How often was the file read"""
 
     @classmethod
-    def add(cls, name, mimetype=None):
+    def add(cls, file_fh_data, mimetype=None):
         """Add a new file uniquely"""
-        with open(name, 'rb') as file:
-            cs = sha256sum(file.read())
-        for record in cls.select().limit(1).where(cls.sha256sum == cs):
+        try:
+            with open(file_fh_data, 'rb') as file:
+                data = file.read()
+        except FileNotFoundError:
+            try:
+                data = file_fh_data.read()
+            except AttributeError:
+                data = file_fh_data
+        checksum = sha512sum(data)
+        try:
+            record = cls.get(cls.sha512sum == checksum)
+        except DoesNotExist:
+            return cls._add(data, mimetype=mimetype)
+        else:
             record._hardlinks += 1
             record.save()
             return record
-        else:
-            return cls._add(name, mimetype=mimetype)
 
     @classmethod
-    def _add(cls, name, mimetype=None):
+    def _add(cls, data, checksum, mimetype=None):
         """Forcibly adds a file"""
-        with open(name, 'rb') as file:
-            data = file.read()
-        sha256sum = str(sha256(data).hexdigest())
         record = cls()
-        record._name = name
         if mimetype is None:
-            record._mimetype = MIMEUtil.getmime(name)
+            record._mimetype = MIMEUtil.getmime(data)
         else:
             record._mimetype = mimetype
-        record._sha256sum = sha256sum
-        record._size = len(data)
-        record._hardlinks = 1
+        record.sha512sum = checksum
+        record.size = len(data)
+        record.hardlinks = 1
         record.save()
         return record
 
     @property
-    def name(self):
-        """Returns the file's name"""
-        return self._name
+    def _path(self):
+        """Returns the file's path"""
+        return join(fs.get('BASE_DIR'), self.sha512sum)
 
-    @name.setter
-    def name(self, name):
-        """Sets the file's name"""
-        rename(self.name, name)
-        self._name = name
+    def _touch(self):
+        """Update access counters"""
+        self.accessed += 1
+        self.last_access = datetime.now()
+        self.save()
 
-    @property
-    def mimetype(self):
-        """Returns the file's MIME type"""
-        return self._mimetype
-
-    @property
-    def sha256sum(self):
-        """Returns the file's SHA-256 sum"""
-        return self._sha256sum
-
-    @property
-    def size(self):
-        """Returns the file's size"""
-        return self._size
-
-    @property
-    def hardlinks(self):
-        """Returns the amount of hardlinks"""
-        return self._hardlinks
-
-    @property
-    def path(self):
-        """Gets the file name"""
-        return self.name
-
-    @path.setter
-    def path(self, path):
-        """Sets the file name"""
-        self.name = path
-
-    @property
-    def basename(self):
-        """Returns the file's basename"""
-        return basename(self.name)
-
-    @basename.setter
-    def basename(self, basename):
-        """Sets the file's basename"""
-        self.name = join(self.dirname, basename)
-
-    @property
-    def dirname(self):
-        """Returns the file's dirname"""
-        return dirname(self.name)
-
-    @dirname.setter
-    def dirname(self, dirname):
-        """Sets the file's dirname"""
-        self.name = join(dirname, self.basename)
+    def read(self, count=None):
+        """Delegate reading to file handler"""
+        with open(self._path, 'rb') as f:
+            return f.read(count)
 
     @property
     def data(self):
-        """Returns the file's content"""
-        with open(self.name, 'rb') as f:
-            return f.read()
-
-    @data.setter
-    def data(self, data):
-        """Sets the file's data and MIME type"""
-        self._mimetype = MIMEUtil.getmime(data)
-        with open(self.name, 'wb') as f:
-            return f.write(data)
+        """Reads the file's content safely"""
+        data = self.read()
+        checksum = sha512sum(data)
+        if checksum == self.sha512sum:
+            return data
+        else:
+            raise ChecksumMismatch(self.sha512sum, checksum)
 
     @property
     def b64data(self):
@@ -179,28 +140,19 @@ class File(FileDBModel):
         else:
             return True
 
-    def read(self):
-        """Reads the file's content safely"""
-        data = self.data
-        cs = sha256sum(data)
-        if cs == self.sha256sum:
-            return data
-        else:
-            raise ChecksumMismatch(self.sha256sum, cs)
-
-    def remove(self):
-        """Removes the file"""
+    def unlink(self):
+        """Unlinks the file"""
         self._hardlinks += -1
         if not self.hardlinks:
-            self._remove()
+            unlink(self.name)
+            self.delete_instance()
         else:
             self.save()
 
-    def _remove(self):
-        """Actually removes the file"""
-        unlink(self.name)
-        return self.delete_instance()
+    def remove(self):
+        """Removes the file"""
+        return self.unlink()
 
     def __str__(self):
         """Converts the file to a string"""
-        return self.name
+        return str(self.sha512sum)
