@@ -5,7 +5,7 @@ from .abc import FileDBModel
 from homeinfo.util import MIMEUtil
 from peewee import CharField, IntegerField
 from os.path import basename, dirname, join
-from os import unlink, rename
+from os import unlink, rename, chown, chmod
 from hashlib import sha256
 from base64 import b64encode
 
