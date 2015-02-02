@@ -10,7 +10,7 @@ from homeinfo.util import MIMEUtil
 from .abc import FileDBModel
 from .config import fs
 from pwd import getpwnam
-from grp import getgrnam    # ΩunresolvedImport
+from grp import getgrnam    # @UnresolvedImport
 
 __date__ = '02.12.2014'
 __author__ = 'Richard Neumann <r.neumann@homeinfo.de>'
