@@ -129,7 +129,7 @@ class File(FileDBModel):
     def consistent(self):
         """Checks for consistency"""
         try:
-            self.read()
+            _ = self.data
         except ChecksumMismatch:
             return False
         else:
