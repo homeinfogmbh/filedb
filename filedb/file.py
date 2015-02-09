@@ -1,14 +1,16 @@
 """Models for HOMEINFO's global file database"""
 
-from os import unlink
+from os import unlink, chown, chmod
 from hashlib import sha512
 from base64 import b64encode
 from datetime import datetime
 from os.path import join
 from peewee import CharField, IntegerField, DoesNotExist, DateTimeField
-from homeinfo.util import MIMEUtil
+from homeinfo.lib import mimetype
 from .abc import FileDBModel
 from .config import fs
+from pwd import getpwnam
+from grp import getgrnam    # @UnresolvedImport
 
 __date__ = '02.12.2014'
 __author__ = 'Richard Neumann <r.neumann@homeinfo.de>'
@@ -65,7 +67,7 @@ class File(FileDBModel):
     """How often was the file read"""
 
     @classmethod
-    def add(cls, file_fh_data, mimetype=None):
+    def add(cls, file_fh_data, mime=None):
         """Add a new file uniquely"""
         try:
             with open(file_fh_data, 'rb') as file:
@@ -79,23 +81,29 @@ class File(FileDBModel):
         try:
             record = cls.get(cls.sha512sum == checksum)
         except DoesNotExist:
-            return cls._add(data, mimetype=mimetype)
+            return cls._add(data, mime=mime)
         else:
             record._hardlinks += 1
             record.save()
             return record
 
     @classmethod
-    def _add(cls, data, checksum, mimetype=None):
+    def _add(cls, data, checksum, mime=None):
         """Forcibly adds a file"""
         record = cls()
-        if mimetype is None:
-            record._mimetype = MIMEUtil.getmime(data)
+        if mime is None:
+            record._mimetype = mimetype(data)
         else:
-            record._mimetype = mimetype
+            record._mimetype = mime
         record.sha512sum = checksum
         record.size = len(data)
         record.hardlinks = 1
+        path = record._path
+        with open(path, 'wb') as f:
+            f.write(data)
+        chmod(path, int(fs.get('mode')))
+        chown(path, getpwnam(fs.get('user')).pw_uid,
+              getgrnam(fs.get('group')).gr_gid)
         record.save()
         return record
 
