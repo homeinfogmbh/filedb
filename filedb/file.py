@@ -6,7 +6,7 @@ from base64 import b64encode
 from datetime import datetime
 from os.path import join
 from peewee import CharField, IntegerField, DoesNotExist, DateTimeField
-from homeinfo.lib import mimetype
+from homeinfolib import mimetype
 from .abc import FileDBModel
 from .config import fs
 from pwd import getpwnam
