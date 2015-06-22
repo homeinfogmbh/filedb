@@ -10,10 +10,12 @@ class FileDBConfig(Configuration):
 
     @property
     def db(self):
+        self.load()
         return self['db']
 
     @property
     def fs(self):
+        self.load()
         return self['fs']
 
 filedb_config = FileDBConfig('/usr/local/etc/filedb.conf')
