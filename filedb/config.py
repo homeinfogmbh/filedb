@@ -1,14 +1,19 @@
-"""
-Configuration for HOMEINFO's global file database
-"""
-from configparser import ConfigParser
+"""Configuration for HOMEINFO's global file database"""
 
-__date__ = '02.12.2014'
-__author__ = 'Richard Neumann <r.neumann@homeinfo.de>'
-__all__ = ['db', 'fs']
+from homeinfo.lib.config import Configuration
 
-CONFIG_FILE = '/usr/local/etc/filedb.conf'
-config = ConfigParser()
-config.read(CONFIG_FILE)
-db = config['db']
-fs = config['fs']
+__all__ = ['filedb_config']
+
+
+class FileDBConfig(Configuration):
+    """Main configuration for the file database"""
+
+    @property
+    def db(self):
+        return self['db']
+
+    @property
+    def fs(self):
+        return self['fs']
+
+filedb_config = FileDBConfig('/usr/local/etc/filedb.conf')

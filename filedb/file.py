@@ -6,14 +6,12 @@ from base64 import b64encode
 from datetime import datetime
 from os.path import join
 from peewee import CharField, IntegerField, DoesNotExist, DateTimeField
-from homeinfolib import mimetype
+from homeinfo.lib.mime import mimetype
 from .abc import FileDBModel
-from .config import fs
+from .config import filedb_config
 from pwd import getpwnam
 from grp import getgrnam    # @UnresolvedImport
 
-__date__ = '02.12.2014'
-__author__ = 'Richard Neumann <r.neumann@homeinfo.de>'
 __all__ = ['ChecksumMismatch', 'sha256sum', 'File']
 
 
@@ -101,16 +99,16 @@ class File(FileDBModel):
         path = record._path
         with open(path, 'wb') as f:
             f.write(data)
-        chmod(path, int(fs.get('mode')))
-        chown(path, getpwnam(fs.get('user')).pw_uid,
-              getgrnam(fs.get('group')).gr_gid)
+        chmod(path, int(filedb_config.fs['mode']))
+        chown(path, getpwnam(filedb_config.fs['user']).pw_uid,
+              getgrnam(filedb_config.fs['group']).gr_gid)
         record.save()
         return record
 
     @property
     def _path(self):
         """Returns the file's path"""
-        return join(fs.get('BASE_DIR'), self.sha512sum)
+        return join(filedb_config.fs['BASE_DIR'], self.sha512sum)
 
     def _touch(self):
         """Update access counters"""
