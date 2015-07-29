@@ -65,7 +65,7 @@ class File(FileDBModel):
     sha256sum = CharField(64)
     size = IntegerField()   # File size in bytes
     hardlinks = IntegerField()
-    created = DateTimeField(null=True, default=None)
+    created = DateTimeField()
     last_access = DateTimeField(null=True, default=None)
     accessed = IntegerField(default=0)
     public = BooleanField(default=False)
@@ -89,7 +89,7 @@ class File(FileDBModel):
         return getgrnam(filedb_config.fs['group']).gr_gid
 
     @classmethod
-    def add(cls, f, mime=None):
+    def add(cls, f, public=False):
         """Add a new file uniquely
         XXX: f can be either a path, file handler or bytes
         """
@@ -104,27 +104,27 @@ class File(FileDBModel):
             except AttributeError:
                 # Finally assume bytes
                 data = f
+        mime = mimetype(data)
         sha256sum = sha256(data).hexdigest()
         try:
             record = cls.get(cls.sha256sum == sha256sum)
         except DoesNotExist:
-            return cls._add(data, sha256sum, mime=mime)
+            return cls._add(data, sha256sum, mime, public=public)
         else:
             record.hardlinks += 1
             record.save()
             return record
 
     @classmethod
-    def _add(cls, data, checksum, mime=None):
+    def _add(cls, data, checksum, mime, public=False):
         """Forcibly adds a file"""
         record = cls()
-        if mime is None:
-            record.mimetype = mimetype(data)
-        else:
-            record.mimetype = mime
+        record.mimetype = mime
         record.sha256sum = checksum
+        record.created = datetime.now()
         record.size = len(data)
         record.hardlinks = 1
+        record.public = public
         path = record.path
         with open(path, 'wb') as f:
             f.write(data)
