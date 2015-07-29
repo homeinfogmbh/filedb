@@ -68,7 +68,7 @@ class File(FileDBModel):
     created = DateTimeField(null=True, default=None)
     last_access = DateTimeField(null=True, default=None)
     accessed = IntegerField(default=0)
-    public = BooleanField()
+    public = BooleanField(default=False)
 
     @classproperty
     @classmethod
