@@ -205,6 +205,7 @@ class File(FileDBModel):
         return str(self.sha256sum)
 
 
+@create
 class FileName(FileDBModel):
     """Mapping of file names"""
 
