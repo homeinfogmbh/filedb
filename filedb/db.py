@@ -10,7 +10,7 @@ from pwd import getpwnam
 from grp import getgrnam    # @UnresolvedImport
 
 from peewee import Model, MySQLDatabase, CharField, IntegerField,\
-    DoesNotExist, DateTimeField, BooleanField, PrimaryKeyField, create
+    DoesNotExist, DateTimeField, PrimaryKeyField, create
 
 from homeinfo.lib.mime import mimetype
 from homeinfo.lib.misc import classproperty
@@ -68,7 +68,6 @@ class File(FileDBModel):
     created = DateTimeField()
     last_access = DateTimeField(null=True, default=None)
     accessed = IntegerField(default=0)
-    public = BooleanField(default=False)
 
     @classproperty
     @classmethod
@@ -89,7 +88,7 @@ class File(FileDBModel):
         return getgrnam(filedb_config.fs['group']).gr_gid
 
     @classmethod
-    def add(cls, f, public=False):
+    def add(cls, f):
         """Add a new file uniquely
         XXX: f can be either a path, file handler or bytes
         """
@@ -109,14 +108,14 @@ class File(FileDBModel):
         try:
             record = cls.get(cls.sha256sum == sha256sum)
         except DoesNotExist:
-            return cls._add(data, sha256sum, mime, public=public)
+            return cls._add(data, sha256sum, mime)
         else:
             record.hardlinks += 1
             record.save()
             return record
 
     @classmethod
-    def _add(cls, data, checksum, mime, public=False):
+    def _add(cls, data, checksum, mime):
         """Forcibly adds a file"""
         record = cls()
         record.mimetype = mime
@@ -124,7 +123,6 @@ class File(FileDBModel):
         record.created = datetime.now()
         record.size = len(data)
         record.hardlinks = 1
-        record.public = public
         path = record.path
         with open(path, 'wb') as f:
             f.write(data)
