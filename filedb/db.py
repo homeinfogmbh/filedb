@@ -65,10 +65,10 @@ class File(FileDBModel):
     sha256sum = CharField(64)
     size = IntegerField()   # File size in bytes
     hardlinks = IntegerField()
-    created = DateTimeField()
-    last_access = DateTimeField()
-    accessed = IntegerField()
-    public = BooleanField
+    created = DateTimeField(null=True, default=None)
+    last_access = DateTimeField(null=True, default=None)
+    accessed = IntegerField(default=0)
+    public = BooleanField()
 
     @classproperty
     @classmethod
@@ -119,9 +119,9 @@ class File(FileDBModel):
         """Forcibly adds a file"""
         record = cls()
         if mime is None:
-            record._mimetype = mimetype(data)
+            record.mimetype = mimetype(data)
         else:
-            record._mimetype = mime
+            record.mimetype = mime
         record.sha256sum = checksum
         record.size = len(data)
         record.hardlinks = 1
