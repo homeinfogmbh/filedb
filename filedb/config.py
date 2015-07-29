@@ -18,4 +18,4 @@ class FileDBConfig(Configuration):
         self.load()
         return self['fs']
 
-filedb_config = FileDBConfig('/usr/local/etc/filedb.conf')
+filedb_config = FileDBConfig('/etc/filedb.conf')

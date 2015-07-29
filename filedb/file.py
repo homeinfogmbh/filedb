@@ -1,16 +1,20 @@
 """Models for HOMEINFO's global file database"""
 
 from os import unlink, chown, chmod
+from os.path import join
 from hashlib import sha512
 from base64 import b64encode
 from datetime import datetime
-from os.path import join
-from peewee import CharField, IntegerField, DoesNotExist, DateTimeField
-from homeinfo.lib.mime import mimetype
-from .abc import FileDBModel
-from .config import filedb_config
+
 from pwd import getpwnam
 from grp import getgrnam    # @UnresolvedImport
+
+from peewee import Model, MySQLDatabase, CharField, IntegerField,\
+    DoesNotExist, DateTimeField, BooleanField, PrimaryKeyField, create
+
+from homeinfo.lib.mime import mimetype
+
+from .config import filedb_config
 
 __all__ = ['ChecksumMismatch', 'sha256sum', 'File']
 
@@ -34,35 +38,38 @@ class ChecksumMismatch(Exception):
 
     def __str__(self):
         """Converts to a string"""
-        return '\n'.join(['File checksums do not match',
-                          ' '.join(['    expected:',
-                                    str(self.expected_value)]),
-                          ' '.join(['    actual:  ',
-                                    str(self.actual_value)])])
+        return '\n'.join([
+            'File checksums do not match',
+            ' '.join(['    expected:', str(self.expected_value)]),
+            ' '.join(['    actual:  ', str(self.actual_value)])])
 
 
-def sha512sum(data):
-    """Creates a checksum string of the respective data"""
-    return str(sha512(data).hexdigest())
+class FileDBModel(Model):
+    """
+    A basic model for the file database
+    """
+    class Meta:
+        database = MySQLDatabase(
+            'filedb',
+            host=filedb_config.db['host'],
+            user=filedb_config.db['user'],
+            passwd=filedb_config.db['passwd'])
+
+    id = PrimaryKeyField()
 
 
+@create
 class File(FileDBModel):
     """A file entry"""
 
     mimetype = CharField(255)
-    """The file's MIME type"""
     sha512sum = CharField(128)
-    """A SHA-512 checksum"""
-    size = IntegerField()
-    """The file's size in bytes"""
+    size = IntegerField()   # File size in bytes
     hardlinks = IntegerField()
-    """Amount of hardlinks on this file"""
     created = DateTimeField()
-    """When was the file stored in the database"""
     last_access = DateTimeField()
-    """When has the file been read the last time"""
     accessed = IntegerField()
-    """How often was the file read"""
+    public = BooleanField
 
     @classmethod
     def add(cls, file_fh_data, mime=None):
@@ -75,7 +82,7 @@ class File(FileDBModel):
                 data = file_fh_data.read()
             except AttributeError:
                 data = file_fh_data
-        checksum = sha512sum(data)
+        checksum = sha512(data).hexdigest()
         try:
             record = cls.get(cls.sha512sum == checksum)
         except DoesNotExist:
@@ -110,7 +117,7 @@ class File(FileDBModel):
         """Returns the file's path"""
         return join(filedb_config.fs['BASE_DIR'], self.sha512sum)
 
-    def _touch(self):
+    def touch(self):
         """Update access counters"""
         self.accessed += 1
         self.last_access = datetime.now()
@@ -120,7 +127,7 @@ class File(FileDBModel):
     def data(self):
         """Reads the file's content safely"""
         data = self.read()
-        checksum = sha512sum(data)
+        checksum = sha512(data).hexdigest()
         if checksum == self.sha512sum:
             return data
         else:
@@ -143,7 +150,7 @@ class File(FileDBModel):
 
     def read(self, count=None):
         """Delegate reading to file handler"""
-        self._touch()
+        self.touch()
         with open(self._path, 'rb') as f:
             return f.read(count)
 
