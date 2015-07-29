@@ -116,6 +116,10 @@ class File(FileDBModel):
         except DoesNotExist:
             file_ = cls._add(data, sha256sum, mime)
         else:
+            if not file_.exists:
+                # Fix data for missing files
+                with open(file_.path, 'wb') as f:
+                    f.write(data)
             file_.hardlinks += 1
             file_.save()
         if name is not None:
