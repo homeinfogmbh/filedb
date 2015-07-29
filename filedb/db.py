@@ -1,7 +1,7 @@
 """Models for HOMEINFO's global file database"""
 
 from os import unlink, chown, chmod
-from os.path import join
+from os.path import join, isfile
 from hashlib import sha256
 from base64 import b64encode
 from datetime import datetime
@@ -172,11 +172,18 @@ class File(FileDBModel):
         return b64encode(self.data)
 
     @property
+    def exists(self):
+        """Checks if the file exists on the system"""
+        return isfile(self.path)
+
+    @property
     def consistent(self):
         """Checks for consistency"""
         try:
             _ = self.data
         except ChecksumMismatch:
+            return False
+        except FileNotFoundError:
             return False
         else:
             return True
