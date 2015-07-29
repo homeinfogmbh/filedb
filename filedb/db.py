@@ -5,12 +5,13 @@ from os.path import join
 from hashlib import sha256
 from base64 import b64encode
 from datetime import datetime
+from contextlib import suppress
 
 from pwd import getpwnam
 from grp import getgrnam    # @UnresolvedImport
 
 from peewee import Model, MySQLDatabase, CharField, IntegerField,\
-    DoesNotExist, DateTimeField, PrimaryKeyField, create
+    DoesNotExist, DateTimeField, PrimaryKeyField, create, ForeignKeyField
 
 from homeinfo.lib.mime import mimetype
 from homeinfo.lib.misc import classproperty
@@ -92,10 +93,12 @@ class File(FileDBModel):
         """Add a new file uniquely
         XXX: f can be either a path, file handler or bytes
         """
+        name = None
         try:
             # Assume file path first
-            with open(f, 'rb') as file:
-                data = file.read()
+            with open(f, 'rb') as fh:
+                data = fh.read()
+            name = f
         except FileNotFoundError:
             try:
                 # Assume file handler
@@ -103,16 +106,27 @@ class File(FileDBModel):
             except AttributeError:
                 # Finally assume bytes
                 data = f
+            else:
+                with suppress(AttributeError):
+                    name = f.name
         mime = mimetype(data)
         sha256sum = sha256(data).hexdigest()
         try:
-            record = cls.get(cls.sha256sum == sha256sum)
+            file_ = cls.get(cls.sha256sum == sha256sum)
         except DoesNotExist:
-            return cls._add(data, sha256sum, mime)
+            file_ = cls._add(data, sha256sum, mime)
         else:
-            record.hardlinks += 1
-            record.save()
-            return record
+            file_.hardlinks += 1
+            file_.save()
+        if name is not None:
+            try:
+                filename = FileName.get(FileName.name == name)
+            except DoesNotExist:
+                filename = FileName()
+                filename.name = name
+                filename.file = file_
+                filename.save()
+        return file_
 
     @classmethod
     def _add(cls, data, checksum, mime):
@@ -189,3 +203,13 @@ class File(FileDBModel):
     def __str__(self):
         """Converts the file to a string"""
         return str(self.sha256sum)
+
+
+class FileName(FileDBModel):
+    """Mapping of file names"""
+
+    name = CharField(255)
+    file = ForeignKeyField(
+        File, db_column='file',
+        related_name='names',
+        on_delete='CASCADE')
