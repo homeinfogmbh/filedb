@@ -1,6 +1,6 @@
 """HOMEINFO's file database"""
 
-from .file import File, ChecksumMismatch
+from filedb.db import File, ChecksumMismatch
 
 __all__ = ['tables', 'File', 'ChecksumMismatch']
 

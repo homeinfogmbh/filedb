@@ -2,7 +2,7 @@
 
 from os import unlink, chown, chmod
 from os.path import join
-from hashlib import sha512
+from hashlib import sha256
 from base64 import b64encode
 from datetime import datetime
 
@@ -13,6 +13,7 @@ from peewee import Model, MySQLDatabase, CharField, IntegerField,\
     DoesNotExist, DateTimeField, BooleanField, PrimaryKeyField, create
 
 from homeinfo.lib.mime import mimetype
+from homeinfo.lib.misc import classproperty
 
 from .config import filedb_config
 
@@ -45,9 +46,7 @@ class ChecksumMismatch(Exception):
 
 
 class FileDBModel(Model):
-    """
-    A basic model for the file database
-    """
+    """A basic model for the file database"""
     class Meta:
         database = MySQLDatabase(
             'filedb',
@@ -63,7 +62,7 @@ class File(FileDBModel):
     """A file entry"""
 
     mimetype = CharField(255)
-    sha512sum = CharField(128)
+    sha256sum = CharField(64)
     size = IntegerField()   # File size in bytes
     hardlinks = IntegerField()
     created = DateTimeField()
@@ -71,24 +70,47 @@ class File(FileDBModel):
     accessed = IntegerField()
     public = BooleanField
 
+    @classproperty
     @classmethod
-    def add(cls, file_fh_data, mime=None):
-        """Add a new file uniquely"""
+    def mode(self):
+        """Returns the default file mode"""
+        return int(filedb_config.fs['mode'], 8)
+
+    @classproperty
+    @classmethod
+    def user(self):
+        """Returns the default file user"""
+        return getpwnam(filedb_config.fs['user']).pw_uid
+
+    @classproperty
+    @classmethod
+    def group(self):
+        """Returns the default file user"""
+        return getgrnam(filedb_config.fs['group']).gr_gid
+
+    @classmethod
+    def add(cls, f, mime=None):
+        """Add a new file uniquely
+        XXX: f can be either a path, file handler or bytes
+        """
         try:
-            with open(file_fh_data, 'rb') as file:
+            # Assume file path first
+            with open(f, 'rb') as file:
                 data = file.read()
         except FileNotFoundError:
             try:
-                data = file_fh_data.read()
+                # Assume file handler
+                data = f.read()
             except AttributeError:
-                data = file_fh_data
-        checksum = sha512(data).hexdigest()
+                # Finally assume bytes
+                data = f
+        sha256sum = sha256(data).hexdigest()
         try:
-            record = cls.get(cls.sha512sum == checksum)
+            record = cls.get(cls.sha256sum == sha256sum)
         except DoesNotExist:
-            return cls._add(data, mime=mime)
+            return cls._add(data, sha256sum, mime=mime)
         else:
-            record._hardlinks += 1
+            record.hardlinks += 1
             record.save()
             return record
 
@@ -100,22 +122,21 @@ class File(FileDBModel):
             record._mimetype = mimetype(data)
         else:
             record._mimetype = mime
-        record.sha512sum = checksum
+        record.sha256sum = checksum
         record.size = len(data)
         record.hardlinks = 1
-        path = record._path
+        path = record.path
         with open(path, 'wb') as f:
             f.write(data)
-        chmod(path, int(filedb_config.fs['mode']))
-        chown(path, getpwnam(filedb_config.fs['user']).pw_uid,
-              getgrnam(filedb_config.fs['group']).gr_gid)
+        chmod(path, cls.mode)
+        chown(path, cls.user, cls.group)
         record.save()
         return record
 
     @property
-    def _path(self):
+    def path(self):
         """Returns the file's path"""
-        return join(filedb_config.fs['BASE_DIR'], self.sha512sum)
+        return join(filedb_config.fs['BASE_DIR'], self.sha256sum)
 
     def touch(self):
         """Update access counters"""
@@ -127,14 +148,14 @@ class File(FileDBModel):
     def data(self):
         """Reads the file's content safely"""
         data = self.read()
-        checksum = sha512(data).hexdigest()
-        if checksum == self.sha512sum:
+        checksum = sha256(data).hexdigest()
+        if checksum == self.sha256sum:
             return data
         else:
-            raise ChecksumMismatch(self.sha512sum, checksum)
+            raise ChecksumMismatch(self.sha256sum, checksum)
 
     @property
-    def b64data(self):
+    def base64(self):
         """Returns the file's data base64 encoded"""
         return b64encode(self.data)
 
@@ -151,14 +172,14 @@ class File(FileDBModel):
     def read(self, count=None):
         """Delegate reading to file handler"""
         self.touch()
-        with open(self._path, 'rb') as f:
+        with open(self.path, 'rb') as f:
             return f.read(count)
 
     def unlink(self):
         """Unlinks / removes the file"""
-        self._hardlinks += -1
+        self.hardlinks += -1
         if not self.hardlinks:
-            unlink(self.name)
+            unlink(self.path)
             self.delete_instance()
         else:
             self.save()
@@ -169,4 +190,4 @@ class File(FileDBModel):
 
     def __str__(self):
         """Converts the file to a string"""
-        return str(self.sha512sum)
+        return str(self.sha256sum)
