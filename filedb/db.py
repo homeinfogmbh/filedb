@@ -53,7 +53,8 @@ class FileDBModel(Model):
             'filedb',
             host=filedb_config.db['host'],
             user=filedb_config.db['user'],
-            passwd=filedb_config.db['passwd'])
+            passwd=filedb_config.db['passwd'],
+            closing=True)
 
     id = PrimaryKeyField()
 
