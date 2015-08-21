@@ -48,6 +48,7 @@ class ChecksumMismatch(Exception):
 
 class FileDBModel(Model):
     """A basic model for the file database"""
+
     class Meta:
         database = MySQLDatabase(
             'filedb',
