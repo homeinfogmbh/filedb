@@ -11,7 +11,7 @@ from pwd import getpwnam
 from grp import getgrnam    # @UnresolvedImport
 
 from peewee import Model, MySQLDatabase, CharField, IntegerField,\
-    DoesNotExist, DateTimeField, PrimaryKeyField, create, ForeignKeyField
+    DoesNotExist, DateTimeField, PrimaryKeyField, ForeignKeyField
 
 from homeinfo.lib.mime import mimetype
 from homeinfo.lib.misc import classproperty
@@ -60,7 +60,6 @@ class FileDBModel(Model):
     id = PrimaryKeyField()
 
 
-@create
 class File(FileDBModel):
     """A file entry"""
 
@@ -218,7 +217,6 @@ class File(FileDBModel):
         return str(self.sha256sum)
 
 
-@create
 class FileName(FileDBModel):
     """Mapping of file names"""
 
