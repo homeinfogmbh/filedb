@@ -56,6 +56,7 @@ class FileDBModel(Model):
             user=filedb_config.db['user'],
             passwd=filedb_config.db['passwd'],
             closing=True)
+        schema = database.database
 
     id = PrimaryKeyField()
 
