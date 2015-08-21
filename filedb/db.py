@@ -11,7 +11,7 @@ from pwd import getpwnam
 from grp import getgrnam    # @UnresolvedImport
 
 from peewee import Model, MySQLDatabase, CharField, IntegerField,\
-    DoesNotExist, DateTimeField, PrimaryKeyField, ForeignKeyField
+    DoesNotExist, DateTimeField, PrimaryKeyField, ForeignKeyField, BlobField
 
 from homeinfo.lib.mime import mimetype
 from homeinfo.lib.misc import classproperty
@@ -65,6 +65,7 @@ class File(FileDBModel):
     """A file entry"""
 
     mimetype = CharField(255)
+    _data = BlobField(db_column='data', null=True)
     sha256sum = CharField(64)
     size = IntegerField()   # File size in bytes
     hardlinks = IntegerField()
@@ -149,7 +150,7 @@ class File(FileDBModel):
         with open(path, 'wb') as f:
             f.write(data)
         chmod(path, cls.mode)
-        chown(path, cls.user, cls.group)
+        # chown(path, cls.user, cls.group)
         record.save()
         return record
 
