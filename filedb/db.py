@@ -111,6 +111,8 @@ class File(FileDBModel):
             else:
                 with suppress(AttributeError):
                     name = f.name
+        except TypeError:
+            data = f
         mime = mimetype(data)
         sha256sum = sha256(data).hexdigest()
         try:
