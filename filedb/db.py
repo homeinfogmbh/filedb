@@ -10,11 +10,12 @@ from contextlib import suppress
 from pwd import getpwnam
 from grp import getgrnam    # @UnresolvedImport
 
-from peewee import Model, MySQLDatabase, CharField, IntegerField,\
-    DoesNotExist, DateTimeField, PrimaryKeyField, ForeignKeyField, BlobField
+from peewee import Model, CharField, IntegerField, DoesNotExist,\
+    DateTimeField, PrimaryKeyField, ForeignKeyField, BlobField
 
 from homeinfo.lib.mime import mimetype
 from homeinfo.lib.misc import classproperty
+from homeinfo.peewee import MySQLDatabase
 
 from .config import filedb_config
 
