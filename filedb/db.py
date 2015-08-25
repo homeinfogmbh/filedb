@@ -1,6 +1,6 @@
 """Models for HOMEINFO's global file database"""
 
-from os import unlink, chown, chmod
+from os import unlink, chmod
 from os.path import join, isfile
 from hashlib import sha256
 from base64 import b64encode
@@ -151,7 +151,6 @@ class File(FileDBModel):
         with open(path, 'wb') as f:
             f.write(data)
         chmod(path, cls.mode)
-        # chown(path, cls.user, cls.group)
         record.save()
         return record
 
