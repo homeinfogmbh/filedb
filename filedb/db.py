@@ -207,16 +207,17 @@ class File(FileDBModel):
         """Unlinks / removes the file"""
         self.hardlinks += -1
         if not self.hardlinks:
+            path = self.path
             result = self.delete_instance()
             try:
-                unlink(self.path)
+                unlink(path)
             except FileNotFoundError:
                 print('filedb:', 'Could not delete file',
-                      self.path, '-', 'Does not exist')
+                      path, '-', 'Does not exist')
                 return False
             except PermissionError:
                 print('filedb:', 'Could not delete file',
-                      self.path, '-', 'Insufficient permissions')
+                      path, '-', 'Insufficient permissions')
                 return False
             else:
                 return result
