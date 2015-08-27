@@ -12,7 +12,9 @@ setup(
     data_files=[
         ('/etc', ['files/etc/filedb.conf']),
         ('/etc/uwsgi/apps-available',
-         ['files/etc/uwsgi/apps-available/filedb.ini'])],
+         ['files/etc/uwsgi/apps-available/filedb.ini']),
+        ('/usr/share/filedb',
+         ['files/usr/share/filedb/filedb.wsgi'])],
     license=open('LICENSE.txt').read(),
     description='HOMEINFO ORM database root',
     long_description=open('README.txt').read(),
