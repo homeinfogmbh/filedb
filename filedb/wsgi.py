@@ -67,7 +67,7 @@ class FileDBController(WsgiController):
         except NotAuthenticated:
             return Error('Not authenticated', status=400)
         else:
-            if auth.get:
+            if auth.perm_get:
                 try:
                     ident = self.ident
                 except InvalidIdentifier:
@@ -126,7 +126,7 @@ class FileDBController(WsgiController):
         except NotAuthenticated:
             return Error('Not authenticated', status=400)
         else:
-            if auth.post:
+            if auth.perm_post:
                 data = self.file.read()
                 try:
                     record = File.add(data)
@@ -144,7 +144,7 @@ class FileDBController(WsgiController):
         except NotAuthenticated:
             return Error('Not authenticated', status=400)
         else:
-            if auth.delete:
+            if auth.perm_delete:
                 try:
                     ident = self.ident
                 except InvalidIdentifier:

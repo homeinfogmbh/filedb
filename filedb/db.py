@@ -246,6 +246,6 @@ class Permission(FileDBModel):
     """Keys allowed to access the filedb"""
 
     key = CharField(36)      # UUID4
-    get = BooleanField()     # read
-    post = BooleanField()    # write
-    delete = BooleanField()  # delete
+    perm_get = BooleanField()     # read
+    perm_post = BooleanField()    # write
+    perm_delete = BooleanField()  # delete
