@@ -78,18 +78,18 @@ class FileDBController(WsgiController):
                     try:
                         f = File.get(File.id == ident)
                     except DoesNotExist:
-                        Error('No such file', status=400)
+                        return Error('No such file', status=400)
                     else:
                         query = self.qd.get('query')
                         if query is None:
                             try:
                                 data = f.data
                             except FileNotFoundError:
-                                Error('File not found', status=500)
+                                return Error('File not found', status=500)
                             except PermissionError:
-                                Error('Cannot read file', status=500)
+                                return Error('Cannot read file', status=500)
                             except ChecksumMismatch:
-                                Error('Corrupted file', status=500)
+                                return Error('Corrupted file', status=500)
                             else:
                                 return OK(data, content_type=f.mimetype,
                                           charset=None)
@@ -156,7 +156,7 @@ class FileDBController(WsgiController):
                     try:
                         f = File.get(File.id == ident)
                     except DoesNotExist:
-                        Error('No such file', status=400)
+                        return Error('No such file', status=400)
                     else:
                         result = f.unlink()
                         return OK(str(result))
