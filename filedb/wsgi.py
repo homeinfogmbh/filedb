@@ -37,7 +37,7 @@ class FileDBController(WsgiController):
     @property
     def ident(self):
         """Returns the appropriate file identifier"""
-        if self.path.length == 2:
+        if len(self.path) == 2:
             ident_str = self.path[-1]
             try:
                 ident = int(ident_str)
