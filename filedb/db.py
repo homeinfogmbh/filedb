@@ -11,7 +11,7 @@ from pwd import getpwnam
 from grp import getgrnam    # @UnresolvedImport
 
 from peewee import Model, CharField, IntegerField, DoesNotExist,\
-    DateTimeField, PrimaryKeyField, ForeignKeyField, BlobField
+    DateTimeField, PrimaryKeyField, ForeignKeyField, BooleanField
 
 from homeinfo.lib.mime import mimetype
 from homeinfo.lib.misc import classproperty
@@ -19,7 +19,7 @@ from homeinfo.peewee import MySQLDatabase
 
 from .config import filedb_config
 
-__all__ = ['ChecksumMismatch', 'sha256sum', 'File']
+__all__ = ['ChecksumMismatch', 'sha256sum', 'File', 'Permission']
 
 
 class ChecksumMismatch(Exception):
@@ -66,7 +66,6 @@ class File(FileDBModel):
     """A file entry"""
 
     mimetype = CharField(255)
-    _data = BlobField(db_column='data', null=True)
     sha256sum = CharField(64)
     size = IntegerField()   # File size in bytes
     hardlinks = IntegerField()
@@ -241,3 +240,12 @@ class FileName(FileDBModel):
         File, db_column='file',
         related_name='names',
         on_delete='CASCADE')
+
+
+class Permission(FileDBModel):
+    """Keys allowed to access the filedb"""
+
+    key = CharField(36)      # UUID4
+    get = BooleanField()     # read
+    post = BooleanField()    # write
+    delete = BooleanField()  # delete
