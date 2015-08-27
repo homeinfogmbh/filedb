@@ -91,7 +91,8 @@ class FileDBController(WsgiController):
                             except ChecksumMismatch:
                                 Error('Corrupted file', status=500)
                             else:
-                                return OK(data, content_type=f.mimetype)
+                                return OK(data, content_type=f.mimetype,
+                                          charset=None)
                         elif query in ['checksum', 'sha256sum']:
                             return OK(f.sha256sum)
                         elif query == 'size':
