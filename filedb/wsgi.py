@@ -27,6 +27,8 @@ class NotAuthenticated(Exception):
 class FileDBController(WsgiController):
     """WSGI controller for filedb access"""
 
+    DEBUG = True
+
     @property
     def key(self):
         """Returns the appropriate key"""
