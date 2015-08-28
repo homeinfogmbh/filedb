@@ -249,3 +249,4 @@ class Permission(FileDBModel):
     perm_get = BooleanField()     # read
     perm_post = BooleanField()    # write
     perm_delete = BooleanField()  # delete
+    annotation = CharField(255)
