@@ -1,5 +1,5 @@
 """HOMEINFO's file database"""
 
-from filedb.http import File
+from filedb.http import FileError, File
 
-__all__ = ['File']
+__all__ = ['FileError', 'File']

@@ -5,6 +5,13 @@ from requests import post, get, delete
 from homeinfo.lib.misc import classproperty
 from .config import filedb_config
 
+__all__ = ['FileError', 'File']
+
+
+class FileError(Exception):
+    """Indicates errors while accessing files"""
+    pass
+
 
 class File():
     """Manages files via HTTP"""
@@ -16,16 +23,37 @@ class File():
         return filedb_config.www['BASE_URL']
 
     @classmethod
-    def add(cls, data):
+    def add(cls, data, debug=False):
         """Adds a file"""
-        return post(cls.base_url, data=data)
+        result = post(cls.base_url, data=data)
+        if debug:
+            return result
+        else:
+            if result.status_code == 200:
+                return int(result.text)
+            else:
+                raise FileError(result)
 
     @classmethod
-    def get(cls, ident):
+    def get(cls, ident, debug=False):
         """Gets a file"""
-        return get(join(cls.base_url, str(ident)))
+        result = get(join(cls.base_url, str(ident)))
+        if debug:
+            return result
+        else:
+            if result.status_code == 200:
+                return result.content
+            else:
+                raise FileError(result)
 
     @classmethod
-    def delete(cls, ident):
+    def delete(cls, ident, debug=False):
         """Deletes a file"""
-        return delete(join(cls.base_url, str(ident)))
+        result = delete(join(cls.base_url, str(ident)))
+        if debug:
+            return result
+        else:
+            if result.status_code == 200:
+                return True
+            else:
+                return False
