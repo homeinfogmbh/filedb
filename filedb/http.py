@@ -67,7 +67,7 @@ class File():
             return result
         else:
             if result.status_code == 200:
-                return result.content
+                return result.text
             else:
                 raise FileError(result)
 
