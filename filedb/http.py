@@ -47,6 +47,19 @@ class File():
                 raise FileError(result)
 
     @classmethod
+    def mimetype(cls, ident, debug=False):
+        """Gets the MIME type of the file"""
+        result = get(join(cls.base_url, str(ident)),
+                     params={'query': 'mimetype'})
+        if debug:
+            return result
+        else:
+            if result.status_code == 200:
+                return result.content
+            else:
+                raise FileError(result)
+
+    @classmethod
     def delete(cls, ident, debug=False):
         """Deletes a file"""
         result = delete(join(cls.base_url, str(ident)))
