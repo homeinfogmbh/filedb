@@ -1,8 +1,7 @@
 """HTTP access to the filedb"""
 
-from os.path import join
+from urllib.parse import urljoin
 from requests import post, get, delete
-from homeinfo.lib.misc import classproperty
 from .config import filedb_config
 
 __all__ = ['FileError', 'File']
@@ -16,16 +15,29 @@ class FileError(Exception):
 class File():
     """Manages files via HTTP"""
 
-    @classproperty
-    @classmethod
-    def base_url(cls):
+    def __init__(self, key):
+        """Sets the API key"""
+        self._key = key
+
+    @property
+    def key(self):
+        """Returns the API key"""
+        return self._key
+
+    @property
+    def params(self):
+        """Returns common URL parameters"""
+        return {'key': self.key}
+
+    @property
+    def base_url(self):
         """Returns the base URL"""
         return filedb_config.www['BASE_URL']
 
-    @classmethod
-    def add(cls, data, debug=False):
+    def add(self, data, debug=False):
         """Adds a file"""
-        result = post(cls.base_url, data=data)
+        params = self.params
+        result = post(self.base_url, data=data, params=params)
         if debug:
             return result
         else:
@@ -34,10 +46,10 @@ class File():
             else:
                 raise FileError(result)
 
-    @classmethod
-    def get(cls, ident, debug=False):
+    def get(self, ident, debug=False):
         """Gets a file"""
-        result = get(join(cls.base_url, str(ident)))
+        params = self.params
+        result = get(urljoin(self.base_url, str(ident)), params=params)
         if debug:
             return result
         else:
@@ -46,11 +58,11 @@ class File():
             else:
                 raise FileError(result)
 
-    @classmethod
-    def mimetype(cls, ident, debug=False):
+    def mimetype(self, ident, debug=False):
         """Gets the MIME type of the file"""
-        result = get(join(cls.base_url, str(ident)),
-                     params={'query': 'mimetype'})
+        params = self.params
+        params['query'] = 'mimetype'
+        result = get(urljoin(self.base_url, str(ident)), params=params)
         if debug:
             return result
         else:
@@ -59,10 +71,10 @@ class File():
             else:
                 raise FileError(result)
 
-    @classmethod
-    def delete(cls, ident, debug=False):
+    def delete(self, ident, debug=False):
         """Deletes a file"""
-        result = delete(join(cls.base_url, str(ident)))
+        params = self.params
+        result = delete(urljoin(self.base_url, str(ident)), params=params)
         if debug:
             return result
         else:
