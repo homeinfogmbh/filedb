@@ -1,6 +1,6 @@
 """HTTP access to the filedb"""
 
-from urllib.parse import urljoin
+from posixpath import join
 from requests import post, get, delete
 from .config import filedb_config
 
@@ -49,7 +49,7 @@ class File():
     def get(self, ident, debug=False):
         """Gets a file"""
         params = self.params
-        result = get(urljoin(self.base_url, str(ident)), params=params)
+        result = get(join(self.base_url, str(ident)), params=params)
         if debug:
             return result
         else:
@@ -62,7 +62,7 @@ class File():
         """Gets the MIME type of the file"""
         params = self.params
         params['query'] = 'mimetype'
-        result = get(urljoin(self.base_url, str(ident)), params=params)
+        result = get(join(self.base_url, str(ident)), params=params)
         if debug:
             return result
         else:
@@ -74,7 +74,7 @@ class File():
     def delete(self, ident, debug=False):
         """Deletes a file"""
         params = self.params
-        result = delete(urljoin(self.base_url, str(ident)), params=params)
+        result = delete(join(self.base_url, str(ident)), params=params)
         if debug:
             return result
         else:
