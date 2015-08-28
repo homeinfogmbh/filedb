@@ -18,4 +18,9 @@ class FileDBConfig(Configuration):
         self.load()
         return self['fs']
 
+    @property
+    def www(self):
+        self.load()
+        return self['www']
+
 filedb_config = FileDBConfig('/etc/filedb.conf')

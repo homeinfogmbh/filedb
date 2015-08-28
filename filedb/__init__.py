@@ -1,7 +1,5 @@
 """HOMEINFO's file database"""
 
-from filedb.db import File, ChecksumMismatch
+from filedb.http import File
 
-__all__ = ['tables', 'File', 'ChecksumMismatch']
-
-tables = [File]
+__all__ = ['File']
