@@ -2,7 +2,7 @@
 
 from peewee import DoesNotExist
 
-from homeinfo.lib.wsgi import WsgiController, OK, Error
+from homeinfo.lib.wsgi import WsgiApp, OK, Error
 
 from .db import File, ChecksumMismatch, Permission
 
@@ -24,7 +24,7 @@ class NotAuthenticated(Exception):
     pass
 
 
-class FileDBController(WsgiController):
+class FileDBController(WsgiApp):
     """WSGI controller for filedb access"""
 
     DEBUG = True
