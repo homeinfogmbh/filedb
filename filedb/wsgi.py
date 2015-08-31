@@ -83,7 +83,11 @@ class FileDBController(WsgiApp):
                         query = self.qd.get('query')
                         if query is None:
                             try:
-                                data = f.data
+                                if self.qd.get('nocheck'):
+                                    # Skip SHA-256 checksum check
+                                    data = f.read()
+                                else:
+                                    data = f.data
                             except FileNotFoundError:
                                 return Error('File not found', status=500)
                             except PermissionError:

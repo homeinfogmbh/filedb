@@ -46,9 +46,11 @@ class File():
             else:
                 raise FileError(result)
 
-    def get(self, ident, debug=False):
+    def get(self, ident, debug=False, nocheck=False):
         """Gets a file"""
         params = self.params
+        if nocheck:
+            params['nocheck'] = True
         result = get(join(self.base_url, str(ident)), params=params)
         if debug:
             return result
