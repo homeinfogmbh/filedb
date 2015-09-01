@@ -7,9 +7,6 @@ from base64 import b64encode
 from datetime import datetime
 from contextlib import suppress
 
-from pwd import getpwnam
-from grp import getgrnam    # @UnresolvedImport
-
 from peewee import Model, CharField, IntegerField, DoesNotExist,\
     DateTimeField, PrimaryKeyField, ForeignKeyField, BooleanField
 
@@ -78,18 +75,6 @@ class File(FileDBModel):
     def mode(self):
         """Returns the default file mode"""
         return int(filedb_config.fs['mode'], 8)
-
-    @classproperty
-    @classmethod
-    def user(self):
-        """Returns the default file user"""
-        return getpwnam(filedb_config.fs['user']).pw_uid
-
-    @classproperty
-    @classmethod
-    def group(self):
-        """Returns the default file user"""
-        return getgrnam(filedb_config.fs['group']).gr_gid
 
     @classmethod
     def add(cls, f):
