@@ -29,16 +29,10 @@ class FileDBController(WsgiApp):
 
     DEBUG = True
 
-    @property
-    def key(self):
-        """Returns the appropriate key"""
-        return self.qd.get('key')
-
-    @property
-    def ident(self):
+    def _ident(self, path):
         """Returns the appropriate file identifier"""
-        if len(self.path) == 2:
-            ident_str = self.path[-1]
+        if len(path) == 2:
+            ident_str = path[-1]
             try:
                 ident = int(ident_str)
             except (TypeError, ValueError):
@@ -48,11 +42,12 @@ class FileDBController(WsgiApp):
         else:
             raise NoIdentifier()
 
-    def authenticate(self):
+    def _authenticate(self, qd):
         """Authenticate an access"""
-        if self.key is not None:
+        key = qd.get('key')
+        if key is not None:
             try:
-                perm = Permission.get(Permission.key == self.key)
+                perm = Permission.get(Permission.key == key)
             except DoesNotExist:
                 raise NotAuthenticated()
             else:
@@ -60,16 +55,18 @@ class FileDBController(WsgiApp):
         else:
             raise NotAuthenticated()
 
-    def get(self):
+    def get(self, environ):
         """Gets a file by its ID"""
+        qd = self.qd(environ)
+        path = self.path(environ)
         try:
-            auth = self.authenticate()
+            auth = self._authenticate(qd)
         except NotAuthenticated:
             return Error('Not authenticated', status=400)
         else:
             if auth.perm_get:
                 try:
-                    ident = self.ident
+                    ident = self._ident(path)
                 except InvalidIdentifier:
                     return Error('Invalid identifier', status=400)
                 except NoIdentifier:
@@ -80,10 +77,10 @@ class FileDBController(WsgiApp):
                     except DoesNotExist:
                         return Error('No such file', status=400)
                     else:
-                        query = self.qd.get('query')
+                        query = qd.get('query')
                         if query is None:
                             try:
-                                if self.qd.get('nocheck'):
+                                if qd.get('nocheck'):
                                     # Skip SHA-256 checksum check
                                     data = f.read()
                                 else:
@@ -108,7 +105,7 @@ class FileDBController(WsgiApp):
                         elif query in ['accesses', 'accessed']:
                             return OK(str(f.accessed))
                         else:  # times
-                            tf = self.qd.get('time_format')
+                            tf = qd.get('time_format')
                             tf = tf or '%Y-%m-%dT%H:%M:%S'
                             if query == 'last_access':
                                 last_access = f.last_access
@@ -124,15 +121,16 @@ class FileDBController(WsgiApp):
             else:
                 return Error('Not authorized', status=400)
 
-    def post(self):
+    def post(self, environ):
         """Stores a (new) file"""
+        qd = self.qd(environ)
         try:
-            auth = self.authenticate()
+            auth = self._authenticate(qd)
         except NotAuthenticated:
             return Error('Not authenticated', status=400)
         else:
             if auth.perm_post:
-                data = self.file.read()
+                data = self.file(environ).read()
                 try:
                     record = File.add(data)
                 except:
@@ -142,16 +140,18 @@ class FileDBController(WsgiApp):
             else:
                 return Error('Not authorized', status=400)
 
-    def delete(self):
+    def delete(self, environ):
         """Deletes a file"""
+        qd = self.qd(environ)
+        path = self.path(environ)
         try:
-            auth = self.authenticate()
+            auth = self._authenticate(qd)
         except NotAuthenticated:
             return Error('Not authenticated', status=400)
         else:
             if auth.perm_delete:
                 try:
-                    ident = self.ident
+                    ident = self._ident(path)
                 except InvalidIdentifier:
                     return Error('Invalid identifier', status=400)
                 except NoIdentifier:
