@@ -57,8 +57,10 @@ class FileDBController(WsgiApp):
 
     def get(self, environ):
         """Gets a file by its ID"""
-        qd = self.qd(environ)
-        path = self.path(environ)
+        query_string = self.query_string(environ)
+        qd = self.qd(query_string)
+        path_info = self.path_info(environ)
+        path = self.path(path_info)
         try:
             auth = self._authenticate(qd)
         except NotAuthenticated:
@@ -123,7 +125,8 @@ class FileDBController(WsgiApp):
 
     def post(self, environ):
         """Stores a (new) file"""
-        qd = self.qd(environ)
+        query_string = self.query_string(environ)
+        qd = self.qd(query_string)
         try:
             auth = self._authenticate(qd)
         except NotAuthenticated:
@@ -142,8 +145,10 @@ class FileDBController(WsgiApp):
 
     def delete(self, environ):
         """Deletes a file"""
-        qd = self.qd(environ)
-        path = self.path(environ)
+        query_string = self.query_string(environ)
+        qd = self.qd(query_string)
+        path_info = self.path_info(environ)
+        path = self.path(path_info)
         try:
             auth = self._authenticate(qd)
         except NotAuthenticated:
