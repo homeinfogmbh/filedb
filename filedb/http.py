@@ -36,15 +36,18 @@ class File():
 
     def add(self, data, debug=False):
         """Adds a file"""
-        params = self.params
-        result = post(self.base_url, data=data, params=params)
-        if debug:
-            return result
-        else:
-            if result.status_code == 200:
-                return int(result.text)
+        if data:
+            params = self.params
+            result = post(self.base_url, data=data, params=params)
+            if debug:
+                return result
             else:
-                raise FileError(result)
+                if result.status_code == 200:
+                    return int(result.text)
+                else:
+                    raise FileError(result)
+        else:
+            raise FileError('Refusing to add empty file')
 
     def get(self, ident, debug=False, nocheck=False):
         """Gets a file"""

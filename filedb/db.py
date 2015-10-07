@@ -99,28 +99,31 @@ class File(FileDBModel):
                     name = f.name
         except (OSError, TypeError):
             data = f
-        mime = mimetype(data)
-        sha256sum = sha256(data).hexdigest()
-        try:
-            file_ = cls.get(cls.sha256sum == sha256sum)
-        except DoesNotExist:
-            file_ = cls._add(data, sha256sum, mime)
-        else:
-            if not file_.exists:
-                # Fix data for missing files
-                with open(file_.path, 'wb') as f:
-                    f.write(data)
-            file_.hardlinks += 1
-            file_.save()
-        if name is not None:
+        if data:
+            mime = mimetype(data)
+            sha256sum = sha256(data).hexdigest()
             try:
-                filename = FileName.get(FileName.name == name)
+                file_ = cls.get(cls.sha256sum == sha256sum)
             except DoesNotExist:
-                filename = FileName()
-                filename.name = name
-                filename.file = file_
-                filename.save()
-        return file_
+                file_ = cls._add(data, sha256sum, mime)
+            else:
+                if not file_.exists:
+                    # Fix data for missing files
+                    with open(file_.path, 'wb') as f:
+                        f.write(data)
+                file_.hardlinks += 1
+                file_.save()
+            if name is not None:
+                try:
+                    filename = FileName.get(FileName.name == name)
+                except DoesNotExist:
+                    filename = FileName()
+                    filename.name = name
+                    filename.file = file_
+                    filename.save()
+            return file_
+        else:
+            raise ValueError('Refusing to create empty file')
 
     @classmethod
     def _add(cls, data, checksum, mime):

@@ -2,7 +2,7 @@
 
 from peewee import DoesNotExist
 
-from homeinfo.lib.wsgi import WsgiApp, OK, Error
+from homeinfo.lib.wsgi import WsgiApp, OK, Error, InternalServerError
 
 from .db import File, ChecksumMismatch, Permission
 
@@ -136,8 +136,8 @@ class FileDBController(WsgiApp):
                 data = self.file(environ).read()
                 try:
                     record = File.add(data)
-                except:
-                    return Error('Could not add file')
+                except Exception as exception:
+                    return InternalServerError(str(exception))
                 else:
                     return OK(str(record.id))
             else:
