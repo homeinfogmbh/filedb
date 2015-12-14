@@ -27,8 +27,6 @@ class NotAuthenticated(Exception):
 class FileDBController(WsgiApp):
     """WSGI controller for filedb access"""
 
-    DEBUG = True
-
     def _ident(self, path):
         """Returns the appropriate file identifier"""
         if len(path) == 2:

@@ -9,6 +9,7 @@ __all__ = ['FileError', 'File']
 
 class FileError(Exception):
     """Indicates errors while accessing files"""
+
     pass
 
 

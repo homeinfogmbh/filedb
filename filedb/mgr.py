@@ -47,4 +47,4 @@ class FileManager():
     def untrack(self, ident=None, checksum=None):
         """Removes a file from the database only"""
         f = self._get_file(ident=ident, checksum=checksum)
-        unlink(f.path)
+        f.delete_record()

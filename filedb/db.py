@@ -21,6 +21,7 @@ __all__ = ['ChecksumMismatch', 'sha256sum', 'File', 'Permission']
 
 class ChecksumMismatch(Exception):
     """Indicates inconsistency between file checksums"""
+
     def __init__(self, expected_value, actual_value):
         """Sets expected and actual value"""
         self._expected_value = expected_value
