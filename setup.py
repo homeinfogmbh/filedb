@@ -17,5 +17,4 @@ setup(
          ['files/usr/share/filedb/filedb.wsgi'])],
     license=open('LICENSE.txt').read(),
     description='HOMEINFO ORM database root',
-    long_description=open('README.txt').read(),
-)
+    long_description=open('README.txt').read())
