@@ -1,7 +1,9 @@
 """HTTP access to the filedb"""
 
-from posixpath import join
+from os.path import join
+
 from requests import post, get, delete
+
 from .config import filedb_config
 
 __all__ = ['FileError', 'File']

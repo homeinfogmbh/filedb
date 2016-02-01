@@ -1,7 +1,8 @@
 """General file DB record and data management"""
 
+from os import unlink
+
 from .db import File
-from posix import unlink
 
 
 class NoIdentError():
