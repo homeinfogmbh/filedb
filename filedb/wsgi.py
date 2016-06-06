@@ -34,6 +34,8 @@ class FileDBControllerRequestHandler(RequestHandler):
     @property
     def _ident(self):
         """Returns the appropriate file identifier"""
+        path = self.path
+
         if len(path) == 2:
             ident_str = self.path[-1]
 
