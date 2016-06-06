@@ -2,7 +2,8 @@
 
 from peewee import DoesNotExist
 
-from homeinfo.lib.wsgi import WsgiApp, OK, Error, InternalServerError
+from homeinfo.lib.wsgi import OK, Error, InternalServerError, handler, \
+    RequestHandler, WsgiApp
 
 from .db import File, ChecksumMismatch, Permission
 
@@ -11,26 +12,31 @@ __all__ = ['FileDBController']
 
 class InvalidIdentifier(Exception):
     """Indicates an invalid file identifier"""
+
     pass
 
 
 class NoIdentifier(Exception):
     """Indicates a missing identifier"""
+
     pass
 
 
 class NotAuthenticated(Exception):
     """Indicates missing authentication"""
+
     pass
 
 
-class FileDBController(WsgiApp):
-    """WSGI controller for filedb access"""
+class FileDBControllerRequestHandler(RequestHandler):
+    """Handles requests for the FileDBController"""
 
-    def _ident(self, path):
+    @property
+    def _ident(self):
         """Returns the appropriate file identifier"""
         if len(path) == 2:
-            ident_str = path[-1]
+            ident_str = self.path[-1]
+
             try:
                 ident = int(ident_str)
             except (TypeError, ValueError):
@@ -40,33 +46,30 @@ class FileDBController(WsgiApp):
         else:
             raise NoIdentifier()
 
-    def _authenticate(self, qd):
+    def _authenticate(self):
         """Authenticate an access"""
-        key = qd.get('key')
-        if key is not None:
+        try:
+            key = self.query_dict['key']
+        except KeyError:
+            raise NotAuthenticated()
+        else:
             try:
-                perm = Permission.get(Permission.key == key)
+                return Permission.get(Permission.key == key)
             except DoesNotExist:
                 raise NotAuthenticated()
-            else:
-                return perm
-        else:
-            raise NotAuthenticated()
 
-    def get(self, environ):
+    def get(self):
         """Gets a file by its ID"""
-        query_string = self.query_string(environ)
-        qd = self.qd(query_string)
-        path_info = self.path_info(environ)
-        path = self.path(path_info)
+        qd = self.query_dict
+
         try:
-            auth = self._authenticate(qd)
+            auth = self._authenticate()
         except NotAuthenticated:
             return Error('Not authenticated', status=400)
         else:
             if auth.perm_get:
                 try:
-                    ident = self._ident(path)
+                    ident = self._ident
                 except InvalidIdentifier:
                     return Error('Invalid identifier', status=400)
                 except NoIdentifier:
@@ -78,6 +81,7 @@ class FileDBController(WsgiApp):
                         return Error('No such file', status=400)
                     else:
                         query = qd.get('query')
+
                         if query is None:
                             try:
                                 if qd.get('nocheck'):
@@ -107,8 +111,10 @@ class FileDBController(WsgiApp):
                         else:  # times
                             tf = qd.get('time_format')
                             tf = tf or '%Y-%m-%dT%H:%M:%S'
+
                             if query == 'last_access':
                                 last_access = f.last_access
+
                                 if last_access is not None:
                                     return OK(last_access.strftime(tf))
                                 else:
@@ -121,19 +127,16 @@ class FileDBController(WsgiApp):
             else:
                 return Error('Not authorized', status=400)
 
-    def post(self, environ):
+    def post(self):
         """Stores a (new) file"""
-        query_string = self.query_string(environ)
-        qd = self.qd(query_string)
         try:
-            auth = self._authenticate(qd)
+            auth = self._authenticate()
         except NotAuthenticated:
             return Error('Not authenticated', status=400)
         else:
             if auth.perm_post:
-                data = self.file(environ).read()
                 try:
-                    record = File.add(data)
+                    record = File.add(self.file.read())
                 except Exception as exception:
                     return InternalServerError(str(exception))
                 else:
@@ -141,20 +144,16 @@ class FileDBController(WsgiApp):
             else:
                 return Error('Not authorized', status=400)
 
-    def delete(self, environ):
+    def delete(self):
         """Deletes a file"""
-        query_string = self.query_string(environ)
-        qd = self.qd(query_string)
-        path_info = self.path_info(environ)
-        path = self.path(path_info)
         try:
-            auth = self._authenticate(qd)
+            auth = self._authenticate()
         except NotAuthenticated:
             return Error('Not authenticated', status=400)
         else:
             if auth.perm_delete:
                 try:
-                    ident = self._ident(path)
+                    ident = self._ident
                 except InvalidIdentifier:
                     return Error('Invalid identifier', status=400)
                 except NoIdentifier:
@@ -169,3 +168,10 @@ class FileDBController(WsgiApp):
                         return OK(str(result))
             else:
                 return Error('Not authorized', status=400)
+
+
+@handler(FileDBControllerRequestHandler)
+class FileDBController(WsgiApp):
+    """WSGI controller for filedb access"""
+
+    pass
