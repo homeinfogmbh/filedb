@@ -85,7 +85,7 @@ class File():
                 raise FileError(result)
 
     def sha256sum(self, ident, debug=False):
-        """Gets the MIME type of the file"""
+        """Gets the SHA-256 checksum of the file"""
         params = self.params
         params['query'] = 'sha256sum'
         result = get(join(self.base_url, str(ident)), params=params)
