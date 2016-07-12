@@ -42,6 +42,7 @@ class File():
         if data:
             params = self.params
             result = post(self.base_url, data=data, params=params)
+
             if debug:
                 return result
             else:
@@ -55,9 +56,12 @@ class File():
     def get(self, ident, debug=False, nocheck=False):
         """Gets a file"""
         params = self.params
+
         if nocheck:
             params['nocheck'] = True
+
         result = get(join(self.base_url, str(ident)), params=params)
+
         if debug:
             return result
         else:
@@ -71,6 +75,21 @@ class File():
         params = self.params
         params['query'] = 'mimetype'
         result = get(join(self.base_url, str(ident)), params=params)
+
+        if debug:
+            return result
+        else:
+            if result.status_code == 200:
+                return result.text
+            else:
+                raise FileError(result)
+
+    def sha256sum(self, ident, debug=False):
+        """Gets the MIME type of the file"""
+        params = self.params
+        params['query'] = 'sha256sum'
+        result = get(join(self.base_url, str(ident)), params=params)
+
         if debug:
             return result
         else:
@@ -83,6 +102,7 @@ class File():
         """Deletes a file"""
         params = self.params
         result = delete(join(self.base_url, str(ident)), params=params)
+
         if debug:
             return result
         else:

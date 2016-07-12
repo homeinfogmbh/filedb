@@ -16,7 +16,7 @@ from homeinfo.peewee import MySQLDatabase
 
 from .config import filedb_config
 
-__all__ = ['ChecksumMismatch', 'sha256sum', 'File', 'Permission']
+__all__ = ['ChecksumMismatch', 'File', 'Permission']
 
 
 class ChecksumMismatch(Exception):
@@ -103,6 +103,7 @@ class File(FileDBModel):
         if data:
             mime = mimetype(data)
             sha256sum = sha256(data).hexdigest()
+
             try:
                 file_ = cls.get(cls.sha256sum == sha256sum)
             except DoesNotExist:
@@ -112,8 +113,10 @@ class File(FileDBModel):
                     # Fix data for missing files
                     with open(file_.path, 'wb') as f:
                         f.write(data)
+
                 file_.hardlinks += 1
                 file_.save()
+
             if name is not None:
                 try:
                     filename = FileName.get(FileName.name == name)
@@ -122,6 +125,7 @@ class File(FileDBModel):
                     filename.name = name
                     filename.file = file_
                     filename.save()
+
             return file_
         else:
             raise ValueError('Refusing to create empty file')
@@ -136,8 +140,10 @@ class File(FileDBModel):
         record.size = len(data)
         record.hardlinks = 1
         path = record.path
+
         with open(path, 'wb') as f:
             f.write(data)
+
         chmod(path, cls.mode)
         record.save()
         return record
@@ -158,6 +164,7 @@ class File(FileDBModel):
         """Reads the file's content safely"""
         data = self.read()
         checksum = sha256(data).hexdigest()
+
         if checksum == self.sha256sum:
             return data
         else:
@@ -188,15 +195,18 @@ class File(FileDBModel):
     def read(self, count=None):
         """Delegate reading to file handler"""
         self.touch()
+
         with open(self.path, 'rb') as f:
             return f.read(count)
 
     def unlink(self):
         """Unlinks / removes the file"""
         self.hardlinks += -1
+
         if not self.hardlinks:
             path = self.path
             result = self.delete_instance()
+
             try:
                 unlink(path)
             except FileNotFoundError:
@@ -219,16 +229,6 @@ class File(FileDBModel):
     def __str__(self):
         """Converts the file to a string"""
         return str(self.sha256sum)
-
-
-class FileName(FileDBModel):
-    """Mapping of file names"""
-
-    name = CharField(255)
-    file = ForeignKeyField(
-        File, db_column='file',
-        related_name='names',
-        on_delete='CASCADE')
 
 
 class Permission(FileDBModel):

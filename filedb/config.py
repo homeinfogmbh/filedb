@@ -23,4 +23,5 @@ class FileDBConfig(Configuration):
         self.load()
         return self['www']
 
+
 filedb_config = FileDBConfig('/etc/filedb.conf')

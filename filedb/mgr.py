@@ -37,6 +37,7 @@ class FileManager():
             f = File.get(File.sha256sum == checksum)
         else:
             raise AmbiguousIdentError()
+
         return f
 
     def purge(self, ident=None, checksum=None):
