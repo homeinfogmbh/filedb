@@ -6,6 +6,7 @@ from hashlib import sha256
 from base64 import b64encode
 from datetime import datetime
 from contextlib import suppress
+from logging import getLogger
 
 from peewee import Model, CharField, IntegerField, DoesNotExist,\
     DateTimeField, PrimaryKeyField, ForeignKeyField, BooleanField
@@ -17,6 +18,9 @@ from homeinfo.peewee import MySQLDatabase
 from .config import filedb_config
 
 __all__ = ['ChecksumMismatch', 'File', 'Permission']
+
+
+logger = getLogger(__file__)
 
 
 class ChecksumMismatch(Exception):
@@ -87,6 +91,7 @@ class File(FileDBModel):
             # Assume file path first
             with open(f, 'rb') as fh:
                 data = fh.read()
+
             name = f
         except FileNotFoundError:
             try:
@@ -100,6 +105,7 @@ class File(FileDBModel):
                     name = f.name
         except (OSError, TypeError):
             data = f
+
         if data:
             mime = mimetype(data)
             sha256sum = sha256(data).hexdigest()
@@ -147,6 +153,34 @@ class File(FileDBModel):
         chmod(path, cls.mode)
         record.save()
         return record
+
+    @classmethod
+    def purge(cls, orphans):
+        """Purge orphans from the filedb"""
+        for orphan in orphans:
+            try:
+                record = cls.get(cls.id == orphan)
+            except DoesNotExist:
+                logger.warning('No such record: {}'.format(orphan))
+            else:
+                # Forcibly remove record
+                record.unlink(force=True)
+                logger.info('Unlinked: {}'.format(record.id))
+
+    @classmethod
+    def update_hardlinks(cls, references):
+        """Fixes the hard links to the given reference dictionary"""
+        for ident in references:
+            try:
+                record = cls.get(cls.id == ident)
+            except DoesNotExist:
+                logger.warning('No such record: {}'.format(ident))
+            else:
+                record.hardlinks = references[ident]
+                record.save()
+                logger.info(
+                    'Set hard links of #{record.id} to '
+                    '{record.hardlinks}'.format(record=record))
 
     @property
     def path(self):
@@ -199,11 +233,11 @@ class File(FileDBModel):
         with open(self.path, 'rb') as f:
             return f.read(count)
 
-    def unlink(self):
+    def unlink(self, force=False):
         """Unlinks / removes the file"""
         self.hardlinks += -1
 
-        if not self.hardlinks:
+        if not self.hardlinks or force:
             path = self.path
             result = self.delete_instance()
 
