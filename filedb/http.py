@@ -20,12 +20,7 @@ class File():
 
     def __init__(self, key):
         """Sets the API key"""
-        self._key = key
-
-    @property
-    def key(self):
-        """Returns the API key"""
-        return self._key
+        self.key = key
 
     @property
     def params(self):

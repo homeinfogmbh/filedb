@@ -20,12 +20,7 @@ class FileManager():
 
     def __init__(self, interactive=False):
         """Sets the interactive flag"""
-        self._interactive = interactive
-
-    @property
-    def interactive(self):
-        """Returns the interactive flag"""
-        return self._interactive
+        self.interactive = interactive
 
     def _get_file(self, ident=None, checksum=None):
         """Gets a file by either identifier or checksum"""

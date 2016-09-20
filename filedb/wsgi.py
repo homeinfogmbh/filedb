@@ -5,7 +5,7 @@ from peewee import DoesNotExist
 from homeinfo.lib.wsgi import OK, Error, InternalServerError, handler, \
     RequestHandler, WsgiApp
 
-from .db import File, ChecksumMismatch, Permission
+from filedb.db import File, ChecksumMismatch, Permission
 
 __all__ = ['FileDBController']
 
@@ -28,7 +28,7 @@ class NotAuthenticated(Exception):
     pass
 
 
-class FileDBControllerRequestHandler(RequestHandler):
+class FileDBRequestHandler(RequestHandler):
     """Handles requests for the FileDBController"""
 
     @property
@@ -111,8 +111,7 @@ class FileDBControllerRequestHandler(RequestHandler):
                         elif query in ['accesses', 'accessed']:
                             return OK(str(f.accessed))
                         else:  # times
-                            tf = qd.get('time_format')
-                            tf = tf or '%Y-%m-%dT%H:%M:%S'
+                            tf = qd.get('time_format') or '%Y-%m-%dT%H:%M:%S'
 
                             if query == 'last_access':
                                 last_access = f.last_access
@@ -172,7 +171,7 @@ class FileDBControllerRequestHandler(RequestHandler):
                 return Error('Not authorized', status=400)
 
 
-@handler(FileDBControllerRequestHandler)
+@handler(FileDBRequestHandler)
 class FileDBController(WsgiApp):
     """WSGI controller for filedb access"""
 
