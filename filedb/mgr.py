@@ -2,7 +2,7 @@
 
 from os import unlink
 
-from .db import File
+from filedb.db import File
 
 
 class NoIdentError():

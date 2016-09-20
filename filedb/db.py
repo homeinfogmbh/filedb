@@ -15,7 +15,7 @@ from homeinfo.lib.mime import mimetype
 from homeinfo.lib.misc import classproperty
 from homeinfo.peewee import MySQLDatabase
 
-from .config import filedb_config
+from filedb.config import config
 
 __all__ = ['ChecksumMismatch', 'File', 'Permission']
 
@@ -55,9 +55,9 @@ class FileDBModel(Model):
     class Meta:
         database = MySQLDatabase(
             'filedb',
-            host=filedb_config.db['host'],
-            user=filedb_config.db['user'],
-            passwd=filedb_config.db['passwd'],
+            host=config.db['host'],
+            user=config.db['user'],
+            passwd=config.db['passwd'],
             closing=True)
         schema = database.database
 
@@ -79,7 +79,7 @@ class File(FileDBModel):
     @classmethod
     def mode(self):
         """Returns the default file mode"""
-        return int(filedb_config.fs['mode'], 8)
+        return int(config.fs['mode'], 8)
 
     @classmethod
     def add(cls, f):
@@ -185,7 +185,7 @@ class File(FileDBModel):
     @property
     def path(self):
         """Returns the file's path"""
-        return join(filedb_config.fs['BASE_DIR'], self.sha256sum)
+        return join(config.fs['BASE_DIR'], self.sha256sum)
 
     def touch(self):
         """Update access counters"""

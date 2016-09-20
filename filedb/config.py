@@ -2,7 +2,7 @@
 
 from homeinfo.lib.config import Configuration
 
-__all__ = ['filedb_config']
+__all__ = ['config']
 
 
 class FileDBConfig(Configuration):
@@ -24,4 +24,4 @@ class FileDBConfig(Configuration):
         return self['www']
 
 
-filedb_config = FileDBConfig('/etc/filedb.conf')
+config = FileDBConfig('/etc/filedb.conf')

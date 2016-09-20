@@ -4,7 +4,7 @@ from os.path import join
 
 from requests import post, get, delete
 
-from .config import filedb_config
+from filedb.config import config
 
 __all__ = ['FileError', 'File']
 
@@ -30,7 +30,7 @@ class File():
     @property
     def base_url(self):
         """Returns the base URL"""
-        return filedb_config.www['BASE_URL']
+        return config.www['BASE_URL']
 
     def add(self, data, debug=False):
         """Adds a file"""
