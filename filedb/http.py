@@ -6,7 +6,7 @@ from requests import post, get, delete
 
 from filedb.config import config
 
-__all__ = ['FileError', 'File']
+__all__ = ['FileError', 'FileClient']
 
 
 class FileError(Exception):
@@ -15,7 +15,7 @@ class FileError(Exception):
     pass
 
 
-class File():
+class FileClient():
     """Manages files via HTTP"""
 
     def __init__(self, key):
