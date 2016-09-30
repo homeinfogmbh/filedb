@@ -7,11 +7,13 @@ from filedb.orm import File
 
 class NoIdentError():
     """Indicates a lack of identifier"""
+
     pass
 
 
 class AmbiguousIdentError():
     """Indicates ambiguous identifiers"""
+
     pass
 
 
