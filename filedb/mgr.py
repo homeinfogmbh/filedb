@@ -2,7 +2,7 @@
 
 from os import unlink
 
-from filedb.db import File
+from filedb.orm import File
 
 
 class NoIdentError():

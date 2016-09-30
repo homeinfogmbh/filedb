@@ -5,7 +5,7 @@ from peewee import DoesNotExist
 from homeinfo.lib.wsgi import OK, Error, InternalServerError, handler, \
     RequestHandler, WsgiApp
 
-from filedb.db import File, ChecksumMismatch, Permission
+from filedb.orm import File, ChecksumMismatch, Permission
 
 __all__ = ['FileDBController']
 
