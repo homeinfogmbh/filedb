@@ -2,8 +2,8 @@
 
 from peewee import DoesNotExist
 
-from homeinfo.lib.wsgi import OK, Error, InternalServerError, handler, \
-    RequestHandler, WsgiApp
+from homeinfo.lib.wsgi import OK, Error, InternalServerError, RequestHandler, \
+    WsgiApp
 
 from filedb.orm import File, ChecksumMismatch, Permission
 
@@ -171,8 +171,8 @@ class FileDBRequestHandler(RequestHandler):
                 return Error('Not authorized', status=400)
 
 
-@handler(FileDBRequestHandler)
 class FileDBController(WsgiApp):
     """WSGI controller for filedb access"""
 
-    pass
+    def __init__(self):
+        super().__init__(FileDBRequestHandler)
