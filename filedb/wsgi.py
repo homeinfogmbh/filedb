@@ -137,7 +137,7 @@ class FileDBRequestHandler(RequestHandler):
         else:
             if auth.perm_post:
                 try:
-                    record = File.add(self.file.read())
+                    record = File.add(self.data)
                 except Exception as exception:
                     return InternalServerError(str(exception))
                 else:
