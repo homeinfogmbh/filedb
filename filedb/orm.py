@@ -5,11 +5,10 @@ from os.path import join, isfile
 from hashlib import sha256
 from base64 import b64encode
 from datetime import datetime
-from contextlib import suppress
 from logging import getLogger
 
 from peewee import Model, CharField, IntegerField, DoesNotExist,\
-    DateTimeField, PrimaryKeyField, ForeignKeyField, BooleanField
+    DateTimeField, PrimaryKeyField, BooleanField
 
 from homeinfo.lib.mime import mimetype
 from homeinfo.lib.misc import classproperty
@@ -86,13 +85,10 @@ class File(FileDBModel):
         """Add a new file uniquely
         XXX: f can be either a path, file handler or bytes
         """
-        name = None
         try:
             # Assume file path first
             with open(f, 'rb') as fh:
                 data = fh.read()
-
-            name = f
         except FileNotFoundError:
             try:
                 # Assume file handler
@@ -100,9 +96,6 @@ class File(FileDBModel):
             except AttributeError:
                 # Finally assume bytes
                 data = f
-            else:
-                with suppress(AttributeError):
-                    name = f.name
         except (OSError, TypeError):
             data = f
 
@@ -122,17 +115,6 @@ class File(FileDBModel):
 
                 file_.hardlinks += 1
                 file_.save()
-
-            if name is not None:
-                try:
-                    filename = FileName.get(FileName.name == name)
-                except DoesNotExist:
-                    filename = FileName()
-                    filename.name = name
-                    filename.file = file_
-                    filename.save()
-
-            return file_
         else:
             raise ValueError('Refusing to create empty file')
 
@@ -218,7 +200,7 @@ class File(FileDBModel):
     def consistent(self):
         """Checks for consistency"""
         try:
-            _ = self.data
+            self.data
         except ChecksumMismatch:
             return False
         except FileNotFoundError:
