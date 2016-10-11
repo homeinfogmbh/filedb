@@ -115,6 +115,7 @@ class File(FileDBModel):
 
                 file_.hardlinks += 1
                 file_.save()
+                return file_
         else:
             raise ValueError('Refusing to create empty file')
 
