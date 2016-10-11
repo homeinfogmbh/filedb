@@ -2,30 +2,12 @@
 
 from peewee import DoesNotExist
 
-from homeinfo.lib.wsgi import OK, Error, InternalServerError, RequestHandler, \
-    WsgiApp
+from homeinfo.lib.wsgi import OK, Error, Binary, InternalServerError, \
+    RequestHandler, WsgiApp
 
 from filedb.orm import File, ChecksumMismatch, Permission
 
 __all__ = ['FileDBController']
-
-
-class InvalidIdentifier(Exception):
-    """Indicates an invalid file identifier"""
-
-    pass
-
-
-class NoIdentifier(Exception):
-    """Indicates a missing identifier"""
-
-    pass
-
-
-class NotAuthenticated(Exception):
-    """Indicates missing authentication"""
-
-    pass
 
 
 class FileDBRequestHandler(RequestHandler):
@@ -42,132 +24,97 @@ class FileDBRequestHandler(RequestHandler):
             try:
                 ident = int(ident_str)
             except (TypeError, ValueError):
-                raise InvalidIdentifier()
+                raise Error('Invalid identifier', status=400) from None
             else:
                 return ident
         else:
-            raise NoIdentifier()
+            raise Error('No identifier', status=400) from None
 
     def _authenticate(self):
         """Authenticate an access"""
         try:
             key = self.params['key']
         except KeyError:
-            raise NotAuthenticated()
+            raise Error('Not authenticated', status=401) from None
         else:
             try:
                 return Permission.get(Permission.key == key)
             except DoesNotExist:
-                raise NotAuthenticated()
+                raise Error('Not authorized', status=403) from None
 
     def get(self):
         """Gets a file by its ID"""
-        try:
-            auth = self._authenticate()
-        except NotAuthenticated:
-            return Error('Not authenticated', status=400)
-        else:
-            if auth.perm_get:
-                try:
-                    ident = self._ident
-                except InvalidIdentifier:
-                    return Error('Invalid identifier', status=400)
-                except NoIdentifier:
-                    return Error('No identifier', status=400)
-                else:
-                    try:
-                        f = File.get(File.id == ident)
-                    except DoesNotExist:
-                        return Error('No such file', status=400)
-                    else:
-                        query = self.params.get('query')
-
-                        if query is None:
-                            try:
-                                if self.params.get('nocheck'):
-                                    # Skip SHA-256 checksum check
-                                    data = f.read()
-                                else:
-                                    data = f.data
-                            except FileNotFoundError:
-                                return Error('File not found', status=500)
-                            except PermissionError:
-                                return Error('Cannot read file', status=500)
-                            except ChecksumMismatch:
-                                return Error('Corrupted file', status=500)
-                            else:
-                                return OK(data, content_type=f.mimetype,
-                                          charset=None)
-                        elif query in ['checksum', 'sha256sum']:
-                            return OK(f.sha256sum)
-                        elif query == 'size':
-                            return OK(str(f.size))
-                        elif query in ['links', 'hardlinks']:
-                            return OK(str(f.hardlinks))
-                        elif query in ['type', 'mimetype']:
-                            return OK(f.mimetype)
-                        elif query in ['accesses', 'accessed']:
-                            return OK(str(f.accessed))
-                        else:  # times
-                            tf = self.params.get(
-                                'time_format', '%Y-%m-%dT%H:%M:%S')
-
-                            if query == 'last_access':
-                                last_access = f.last_access
-
-                                if last_access is not None:
-                                    return OK(last_access.strftime(tf))
-                                else:
-                                    return OK('never')
-                            elif query == 'created':
-                                created = f.created
-                                return OK(created.strftime(tf))
-                            else:
-                                return Error('Invalid mode', status=400)
+        if self._authenticate().perm_get:
+            try:
+                f = File.get(File.id == self._ident)
+            except DoesNotExist:
+                raise Error('No such file', status=400) from None
             else:
-                return Error('Not authorized', status=400)
+                query = self.params.get('query')
+
+                if query is None:
+                    try:
+                        if self.params.get('nocheck'):
+                            # Skip SHA-256 checksum check
+                            data = f.read()
+                        else:
+                            data = f.data
+                    except FileNotFoundError:
+                        raise Error('File not found', status=500) from None
+                    except PermissionError:
+                        raise Error('Cannot read file', status=500) from None
+                    except ChecksumMismatch:
+                        raise Error('Corrupted file', status=500) from None
+                    else:
+                        return Binary(data)
+                elif query in ['checksum', 'sha256sum']:
+                    return OK(f.sha256sum)
+                elif query == 'size':
+                    return OK(str(f.size))
+                elif query in ['links', 'hardlinks']:
+                    return OK(str(f.hardlinks))
+                elif query in ['type', 'mimetype']:
+                    return OK(f.mimetype)
+                elif query in ['accesses', 'accessed']:
+                    return OK(str(f.accessed))
+                else:  # times
+                    tf = self.params.get('time_format', '%Y-%m-%dT%H:%M:%S')
+
+                    if query == 'last_access':
+                        if f.last_access is not None:
+                            return OK(f.last_access.strftime(tf))
+                        else:
+                            return OK('never')
+                    elif query == 'created':
+                        return OK(f.created.strftime(tf))
+                    else:
+                        raise Error('Invalid mode', status=400) from None
+        else:
+            raise Error('Not authorized', status=403) from None
 
     def post(self):
         """Stores a (new) file"""
-        try:
-            auth = self._authenticate()
-        except NotAuthenticated:
-            return Error('Not authenticated', status=400)
-        else:
-            if auth.perm_post:
-                try:
-                    record = File.add(self.data)
-                except Exception as e:
-                    return InternalServerError(str(e))
-                else:
-                    return OK(str(record.id))
+        if self._authenticate().perm_post:
+            try:
+                record = File.add(self.data)
+            except Exception as e:
+                return InternalServerError(str(e))
             else:
-                return Error('Not authorized', status=400)
+                return OK(str(record.id))
+        else:
+            raise Error('Not authorized', status=403) from None
 
     def delete(self):
         """Deletes a file"""
-        try:
-            auth = self._authenticate()
-        except NotAuthenticated:
-            return Error('Not authenticated', status=400)
-        else:
-            if auth.perm_delete:
-                try:
-                    ident = self._ident
-                except InvalidIdentifier:
-                    return Error('Invalid identifier', status=400)
-                except NoIdentifier:
-                    return Error('No identifier', status=400)
-                else:
-                    try:
-                        f = File.get(File.id == ident)
-                    except DoesNotExist:
-                        return Error('No such file', status=400)
-                    else:
-                        result = f.unlink()
-                        return OK(str(result))
+        if self._authenticate().perm_delete:
+            try:
+                f = File.get(File.id == self._ident)
+            except DoesNotExist:
+                raise Error('No such file', status=400) from None
             else:
-                return Error('Not authorized', status=400)
+                return OK(str(f.unlink()))
+        else:
+            raise Error('Not authorized', status=400) from None
 
 
 class FileDBController(WsgiApp):
