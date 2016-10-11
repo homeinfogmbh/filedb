@@ -104,18 +104,18 @@ class File(FileDBModel):
             sha256sum = sha256(data).hexdigest()
 
             try:
-                file_ = cls.get(cls.sha256sum == sha256sum)
+                record = cls.get(cls.sha256sum == sha256sum)
             except DoesNotExist:
-                file_ = cls._add(data, sha256sum, mime)
+                return cls._add(data, sha256sum, mime)
             else:
-                if not file_.exists:
-                    # Fix data for missing files
-                    with open(file_.path, 'wb') as f:
+                if not record.exists:
+                    # Fix missing files on file system
+                    with open(record.path, 'wb') as f:
                         f.write(data)
 
-                file_.hardlinks += 1
-                file_.save()
-                return file_
+                record.hardlinks += 1
+                record.save()
+                return record
         else:
             raise ValueError('Refusing to create empty file')
 
