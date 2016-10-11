@@ -12,7 +12,10 @@ __all__ = ['FileError', 'FileClient']
 class FileError(Exception):
     """Indicates errors while accessing files"""
 
-    pass
+    def __init__(self, result):
+        """Sets the request result"""
+        super().__init__(result)
+        self.result = result
 
 
 class FileClient():
