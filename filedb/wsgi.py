@@ -120,5 +120,7 @@ class FileDBRequestHandler(RequestHandler):
 class FileDBController(WsgiApp):
     """WSGI controller for filedb access"""
 
+    DEBUG = True
+
     def __init__(self):
         super().__init__(FileDBRequestHandler)
