@@ -51,7 +51,7 @@ class FileDBRequestHandler(RequestHandler):
     def _authenticate(self):
         """Authenticate an access"""
         try:
-            key = self.query_dict['key']
+            key = self.params['key']
         except KeyError:
             raise NotAuthenticated()
         else:
@@ -62,8 +62,6 @@ class FileDBRequestHandler(RequestHandler):
 
     def get(self):
         """Gets a file by its ID"""
-        qd = self.query_dict
-
         try:
             auth = self._authenticate()
         except NotAuthenticated:
@@ -82,11 +80,11 @@ class FileDBRequestHandler(RequestHandler):
                     except DoesNotExist:
                         return Error('No such file', status=400)
                     else:
-                        query = qd.get('query')
+                        query = self.params.get('query')
 
                         if query is None:
                             try:
-                                if qd.get('nocheck'):
+                                if self.params.get('nocheck'):
                                     # Skip SHA-256 checksum check
                                     data = f.read()
                                 else:
@@ -111,7 +109,8 @@ class FileDBRequestHandler(RequestHandler):
                         elif query in ['accesses', 'accessed']:
                             return OK(str(f.accessed))
                         else:  # times
-                            tf = qd.get('time_format') or '%Y-%m-%dT%H:%M:%S'
+                            tf = self.params.get(
+                                'time_format', '%Y-%m-%dT%H:%M:%S')
 
                             if query == 'last_access':
                                 last_access = f.last_access
