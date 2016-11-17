@@ -3,14 +3,14 @@
 from peewee import DoesNotExist
 
 from homeinfo.lib.wsgi import OK, Error, Binary, InternalServerError, \
-    RequestHandler, WsgiApp
+    RequestHandler
 
 from filedb.orm import File, ChecksumMismatch, Permission
 
-__all__ = ['FileDBController']
+__all__ = ['FileDB']
 
 
-class FileDBRequestHandler(RequestHandler):
+class FileDB(RequestHandler):
     """Handles requests for the FileDBController"""
 
     @property
@@ -33,7 +33,7 @@ class FileDBRequestHandler(RequestHandler):
     def _authenticate(self):
         """Authenticate an access"""
         try:
-            key = self.params['key']
+            key = self.query['key']
         except KeyError:
             raise Error('Not authenticated', status=401) from None
         else:
@@ -50,11 +50,11 @@ class FileDBRequestHandler(RequestHandler):
             except DoesNotExist:
                 raise Error('No such file', status=400) from None
             else:
-                query = self.params.get('query')
+                query = self.query.get('query')
 
                 if query is None:
                     try:
-                        if self.params.get('nocheck'):
+                        if self.query.get('nocheck'):
                             # Skip SHA-256 checksum check
                             data = f.read()
                         else:
@@ -78,7 +78,7 @@ class FileDBRequestHandler(RequestHandler):
                 elif query in ['accesses', 'accessed']:
                     return OK(str(f.accessed))
                 else:  # times
-                    tf = self.params.get('time_format', '%Y-%m-%dT%H:%M:%S')
+                    tf = self.query.get('time_format', '%Y-%m-%dT%H:%M:%S')
 
                     if query == 'last_access':
                         if f.last_access is not None:
@@ -115,12 +115,3 @@ class FileDBRequestHandler(RequestHandler):
                 return OK(str(f.unlink()))
         else:
             raise Error('Not authorized', status=400) from None
-
-
-class FileDBController(WsgiApp):
-    """WSGI controller for filedb access"""
-
-    DEBUG = True
-
-    def __init__(self):
-        super().__init__(FileDBRequestHandler)

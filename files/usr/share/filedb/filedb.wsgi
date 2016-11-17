@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 """WSGI main program for HOMIE Controller"""
 
-from filedb.wsgi import FileDBController
+from homeinfo.lib.wsgi import WsgiApp
+from filedb.wsgi import FileDB
 
-application = FileDBController()
+application = WsgiApp(FileDB)
