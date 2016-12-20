@@ -2,35 +2,27 @@
 
 from peewee import DoesNotExist
 
-from homeinfo.lib.wsgi import OK, Error, Binary, InternalServerError, \
-    RequestHandler
+from homeinfo.lib.rest import ResourceHandler
+from homeinfo.lib.wsgi import OK, Error, Binary, InternalServerError
 
 from filedb.orm import File, ChecksumMismatch, Permission
 
 __all__ = ['FileDB']
 
 
-class FileDB(RequestHandler):
+class FileDB(ResourceHandler):
     """Handles requests for the FileDBController"""
 
     @property
     def _ident(self):
         """Returns the appropriate file identifier"""
-        path = self.path
+        try:
+            return int(self.resource)
+        except (TypeError, ValueError):
+            raise Error('Invalid identifier', status=400) from None
 
-        if len(path) == 2:
-            ident_str = self.path[-1]
-
-            try:
-                ident = int(ident_str)
-            except (TypeError, ValueError):
-                raise Error('Invalid identifier', status=400) from None
-            else:
-                return ident
-        else:
-            raise Error('No identifier', status=400) from None
-
-    def _authenticate(self):
+    @property
+    def _auth(self):
         """Authenticate an access"""
         try:
             key = self.query['key']
@@ -44,11 +36,11 @@ class FileDB(RequestHandler):
 
     def get(self):
         """Gets a file by its ID"""
-        if self._authenticate().perm_get:
+        if self._auth.perm_get:
             try:
                 f = File.get(File.id == self._ident)
             except DoesNotExist:
-                raise Error('No such file', status=400) from None
+                raise Error('No such file', status=404) from None
             else:
                 query = self.query.get('query')
 
@@ -94,19 +86,33 @@ class FileDB(RequestHandler):
 
     def post(self):
         """Stores a (new) file"""
-        if self._authenticate().perm_post:
+        if self._auth.perm_post:
             try:
                 record = File.add(self.data)
             except Exception as e:
-                return InternalServerError(str(e))
+                raise InternalServerError(str(e)) from None
             else:
                 return OK(str(record.id))
         else:
             raise Error('Not authorized', status=403) from None
 
+    def put(self):
+        """Increases the reference counter"""
+        if self._auth.perm_post:  # Use POST permissions for now
+            try:
+                f = File.get(File.id == self._ident)
+            except DoesNotExist:
+                raise Error('No such file', status=404) from None
+            else:
+                f.hardlinks += 1
+                f.save()
+                return OK()
+        else:
+            raise Error('Not authorized', status=403) from None
+
     def delete(self):
         """Deletes a file"""
-        if self._authenticate().perm_delete:
+        if self._auth.perm_delete:
             try:
                 f = File.get(File.id == self._ident)
             except DoesNotExist:

@@ -4,14 +4,19 @@ from os import unlink
 
 from filedb.orm import File
 
+__all__ = [
+    'NoIdentError',
+    'AmbiguousIdentError',
+    'FileManager']
 
-class NoIdentError():
+
+class NoIdentError(Exception):
     """Indicates a lack of identifier"""
 
     pass
 
 
-class AmbiguousIdentError():
+class AmbiguousIdentError(Exception):
     """Indicates ambiguous identifiers"""
 
     pass

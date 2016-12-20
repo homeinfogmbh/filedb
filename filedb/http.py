@@ -2,7 +2,7 @@
 
 from os.path import join
 
-from requests import post, get, delete
+from requests import post, get, put, delete
 
 from filedb.config import config
 
@@ -59,6 +59,23 @@ class FileClient():
             params['nocheck'] = True
 
         result = get(join(self.base_url, str(ident)), params=params)
+
+        if debug:
+            return result
+        else:
+            if result.status_code == 200:
+                return result.content
+            else:
+                raise FileError(result)
+
+    def put(self, ident, debug=False, nocheck=False):
+        """Increases reference counter"""
+        params = self.params
+
+        if nocheck:
+            params['nocheck'] = True
+
+        result = put(join(self.base_url, str(ident)), params=params)
 
         if debug:
             return result
