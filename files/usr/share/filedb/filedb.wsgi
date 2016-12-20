@@ -4,4 +4,4 @@
 from homeinfo.lib.rest import RestApp
 from filedb.wsgi import FileDB
 
-application = RestApp('filedb': FileDB)
+application = RestApp({'filedb': FileDB})
