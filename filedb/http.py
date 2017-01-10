@@ -1,6 +1,7 @@
 """HTTP access to the filedb"""
 
 from os.path import join
+from datetime import datetime
 
 from requests import post, get, put, delete
 
@@ -85,34 +86,6 @@ class FileClient():
             else:
                 raise FileError(result)
 
-    def mimetype(self, ident, debug=False):
-        """Gets the MIME type of the file"""
-        params = self.params
-        params['query'] = 'mimetype'
-        result = get(join(self.base_url, str(ident)), params=params)
-
-        if debug:
-            return result
-        else:
-            if result.status_code == 200:
-                return result.text
-            else:
-                raise FileError(result)
-
-    def sha256sum(self, ident, debug=False):
-        """Gets the SHA-256 checksum of the file"""
-        params = self.params
-        params['query'] = 'sha256sum'
-        result = get(join(self.base_url, str(ident)), params=params)
-
-        if debug:
-            return result
-        else:
-            if result.status_code == 200:
-                return result.text
-            else:
-                raise FileError(result)
-
     def delete(self, ident, debug=False):
         """Deletes a file"""
         params = self.params
@@ -125,3 +98,51 @@ class FileClient():
                 return True
             else:
                 return False
+
+    def _get_metadata(self, ident, query, debug=False):
+        """Gets metadata"""
+        params = self.params
+        params['query'] = query
+        result = get(join(self.base_url, str(ident)), params=params)
+
+        if debug:
+            return result
+        else:
+            if result.status_code == 200:
+                return result.text
+            else:
+                raise FileError(result)
+
+    def sha256sum(self, ident, debug=False):
+        """Gets the SHA-256 checksum of the file"""
+        return self._get_metadata(ident, 'sha256sum', debug=debug)
+
+    def size(self, ident, debug=False):
+        """Gets the file size in bytes"""
+        return int(self._get_metadata(ident, 'size', debug=debug))
+
+    def hardlinks(self, ident, debug=False):
+        """Gets the file size in bytes"""
+        return int(self._get_metadata(ident, 'hardlinks', debug=debug))
+
+    def mimetype(self, ident, debug=False):
+        """Gets the MIME type of the file"""
+        return self._get_metadata(ident, 'mimetype', debug=debug)
+
+    def accessed(self, ident, debug=False):
+        """Gets the access count of the file"""
+        return int(self._get_metadata(ident, 'accessed', debug=debug))
+
+    def last_access(self, ident, debug=False, tf='%Y-%m-%dT%H:%M:%S'):
+        """Gets the last access datetime of the file"""
+        la = self._get_metadata(ident, 'last_access', debug=debug)
+
+        if la == 'never':
+            return None
+        else:
+            return datetime.strptime(la, tf)
+
+    def created(self, ident, debug=False, tf='%Y-%m-%dT%H:%M:%S'):
+        """Gets the datetime of the file's creation"""
+        return datetime.strptime(
+            self._get_metadata(ident, 'created', debug=debug), tf)

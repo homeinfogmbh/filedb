@@ -59,15 +59,15 @@ class FileDB(ResourceHandler):
                         raise Error('Corrupted file', status=500) from None
                     else:
                         return Binary(data)
-                elif query in ['checksum', 'sha256sum']:
+                elif query == 'sha256sum':
                     return OK(f.sha256sum)
                 elif query == 'size':
                     return OK(str(f.size))
-                elif query in ['links', 'hardlinks']:
+                elif query == 'hardlinks':
                     return OK(str(f.hardlinks))
-                elif query in ['type', 'mimetype']:
+                elif query == 'mimetype':
                     return OK(f.mimetype)
-                elif query in ['accesses', 'accessed']:
+                elif query == 'accessed':
                     return OK(str(f.accessed))
                 else:  # times
                     tf = self.query.get('time_format', '%Y-%m-%dT%H:%M:%S')
@@ -80,7 +80,7 @@ class FileDB(ResourceHandler):
                     elif query == 'created':
                         return OK(f.created.strftime(tf))
                     else:
-                        raise Error('Invalid mode', status=400) from None
+                        raise Error('Invalid query', status=400) from None
         else:
             raise Error('Not authorized', status=403) from None
 
