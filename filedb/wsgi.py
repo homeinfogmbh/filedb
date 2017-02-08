@@ -18,11 +18,13 @@ class FileDB(ResourceHandler):
         """Returns the appropriate file identifier"""
         try:
             return int(self.resource)
-        except (TypeError, ValueError):
+        except ValueError:
             raise Error('Invalid identifier', status=400) from None
+        except TypeError:
+            raise Error('Missing identifier', status=400) from None
 
     @property
-    def _auth(self):
+    def _perm(self):
         """Authenticate an access"""
         try:
             key = self.query['key']
@@ -36,7 +38,7 @@ class FileDB(ResourceHandler):
 
     def get(self):
         """Gets a file by its ID"""
-        if self._auth.perm_get:
+        if self._perm.get:
             try:
                 f = File.get(File.id == self._ident)
             except DoesNotExist:
@@ -86,7 +88,7 @@ class FileDB(ResourceHandler):
 
     def post(self):
         """Stores a (new) file"""
-        if self._auth.perm_post:
+        if self._perm.post:
             try:
                 record = File.add(self.data)
             except Exception as e:
@@ -98,7 +100,7 @@ class FileDB(ResourceHandler):
 
     def put(self):
         """Increases the reference counter"""
-        if self._auth.perm_post:  # Use POST permissions for now
+        if self._perm.post:  # Use POST permissions for now
             try:
                 f = File.get(File.id == self._ident)
             except DoesNotExist:
@@ -112,7 +114,7 @@ class FileDB(ResourceHandler):
 
     def delete(self):
         """Deletes a file"""
-        if self._auth.perm_delete:
+        if self._perm.delete:
             try:
                 f = File.get(File.id == self._ident)
             except DoesNotExist:
