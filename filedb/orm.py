@@ -256,3 +256,12 @@ class Permission(FileDBModel):
     post = BooleanField()
     delete = BooleanField()
     annotation = CharField(255)
+
+    def __str__(self):
+        """Returns a human readable representation"""
+        return '{key}: {get}{post}{delete} ({annotation})'.format(
+            key=self.key,
+            get='g' if self.get else '-',
+            post='p' if self.post else '-',
+            delete='d' if self.delete else '-',
+            annotation=self.annotation)
