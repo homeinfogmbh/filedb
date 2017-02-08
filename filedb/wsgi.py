@@ -38,7 +38,7 @@ class FileDB(ResourceHandler):
 
     def get(self):
         """Gets a file by its ID"""
-        if self._perm.get:
+        if self._perm.get_:
             try:
                 f = File.get(File.id == self._ident)
             except DoesNotExist:
