@@ -42,21 +42,23 @@ class FileProperty():
         else:
             return self.integer_field
 
-    def __set__(self, instance, value):
+    def __set__(self, instance, new_value):
         """Stores file data within filedb using
         file_client and value from inter_field
         """
         if instance is not None:
-            try:
-                self.file_client.delete(
-                    getattr(instance, self.integer_field.name))
-            except FileError as e:
-                logger.error(e)
+            current_value = getattr(instance, self.integer_field.name)
 
-            if value is not None:
-                value = self.file_client.add(value)
+            if current_value is not None:
+                try:
+                    self.file_client.delete(current_value)
+                except FileError as e:
+                    logger.error(e.result)
 
-            setattr(instance, self.integer_field.name, value)
+            if new_value is not None:
+                new_value = self.file_client.add(new_value)
+
+            setattr(instance, self.integer_field.name, new_value)
 
             if self.autosave:
                 instance.save()
