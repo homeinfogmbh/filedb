@@ -2,12 +2,17 @@
 
 from os.path import join
 from datetime import datetime
+from logging import basicConfig, getLogger
 
 from requests import post, get, put, delete
 
 from filedb.config import config
 
 __all__ = ['FileError', 'FileClient']
+
+
+basicConfig()
+logger = getLogger(__name__)
 
 
 class FileError(Exception):
@@ -146,3 +151,28 @@ class FileClient():
         """Gets the datetime of the file's creation"""
         return datetime.strptime(
             self._get_metadata(ident, 'created', debug=debug), tf)
+
+
+class FileProperty():
+    """File property"""
+
+    def __init__(self, file_manager, field, saving=False):
+        self.file_manager = file_manager
+        self.field = field
+        self.saving = saving
+
+    def __get__(self, instance, instance_type=None):
+        if instance is not None:
+            return self.file_manager.get(self.field)
+        return self
+
+    def __set__(self, instance, value):
+        try:
+            self.file_manager.delete(self.field)
+        except FileError as e:
+            logger.error(e)
+
+        self.field = self.file_manager.add(value)
+
+        if self.saving:
+            instance.save()
