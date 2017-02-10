@@ -1,20 +1,32 @@
 """Extra hacks"""
 
 from logging import basicConfig, getLogger
-from filedb.http import FileError
+from filedb.http import FileError, FileClient
 
 __all__ = ['FileProperty']
 
 
 basicConfig()
 logger = getLogger(__name__)
+_param_err = ValueError('Need either file_client or key')
 
 
 class FileProperty():
     """File property"""
 
-    def __init__(self, integer_field, file_client, autosave=False):
+    def __init__(self, integer_field, file_client=None,
+                 key=None, autosave=False):
         self.integer_field = integer_field
+
+        if file_client is not None and key is not None:
+            raise _param_err
+        elif file_client is not None:
+            self.file_client = file_client
+        elif key is not None:
+            self.file_client = FileClient(key)
+        else:
+            raise _param_err
+
         self.file_client = file_client
         self.autosave = autosave
 
