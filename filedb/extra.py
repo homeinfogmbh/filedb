@@ -28,7 +28,7 @@ class FileProperty():
             if value is not None:
                 return self.file_client.get(value)
         else:
-            return self
+            return self.integer_field
 
     def __set__(self, instance, value):
         """Stores file data within filedb using
