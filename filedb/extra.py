@@ -22,7 +22,7 @@ class SaveCallback():
         else:
             new_value = None
 
-        setattr(self.instance, self.field.integer_field.name, None)
+        setattr(self.instance, self.field.integer_field.name, new_value)
 
         if self.field.old_value is not None:
             self.field.file_client.delete(self.field.old_value)
