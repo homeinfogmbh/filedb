@@ -17,9 +17,12 @@ class SaveCallback():
 
     def __call__(self, *args, **kwargs):
         if self.field.new_value is not None:
-            setattr(self.instance, self.field.integer_field.name,
-                    self.field.file_client.add(self.field.new_value))
+            new_value = self.field.file_client.add(self.field.new_value)
             self.field.new_value = None
+        else:
+            new_value = None
+
+        setattr(self.instance, self.field.integer_field.name, None)
 
         if self.field.old_value is not None:
             self.field.file_client.delete(self.field.old_value)
