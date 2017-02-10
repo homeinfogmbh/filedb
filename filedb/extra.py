@@ -11,6 +11,22 @@ logger = getLogger(__name__)
 _param_err = ValueError('Need either file_client or key')
 
 
+class SaveCallback():
+    """Save callback wrapper"""
+
+    def __init__(self, instance, field):
+        self.instance = instance
+        self.field = field
+        self.old_save = self.instance.save
+
+    def __call__(self, *args, **kwargs):
+        while self.field.old_values:
+            self.field.delete(self.field.old_values.pop())
+
+        self.instance.__class__.save(self.instance)
+        self.instance.save = self.old_save
+
+
 class FileProperty():
     """File property"""
 
@@ -29,6 +45,7 @@ class FileProperty():
 
         self.file_client = file_client
         self.autosave = autosave
+        self.old_values = []
 
     def __get__(self, instance, instance_type=None):
         """Returns file data from filedb using
@@ -49,16 +66,25 @@ class FileProperty():
         if instance is not None:
             current_value = getattr(instance, self.integer_field.name)
 
-            if current_value is not None:
-                try:
-                    self.file_client.delete(current_value)
-                except FileError as e:
-                    logger.error(e.result)
-
             if new_value is not None:
                 new_value = self.file_client.add(new_value)
 
             setattr(instance, self.integer_field.name, new_value)
 
             if self.autosave:
+                if current_value is not None:
+                    self.delete(current_value)
+
                 instance.save()
+            else:
+                self.old_values.append(current_value)
+
+                if instance.save.__class__ is not SaveCallback:
+                    instance.save = SaveCallback(instance, self)
+
+    def delete(self, file_id):
+        """Deletes the old file"""
+        try:
+            self.file_client.delete(file_id)
+        except FileError as e:
+            logger.error(e.result)
