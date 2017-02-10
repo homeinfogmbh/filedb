@@ -8,7 +8,7 @@ from requests import post, get, put, delete
 
 from filedb.config import config
 
-__all__ = ['FileError', 'FileClient']
+__all__ = ['FileError', 'FileClient', 'FileProperty']
 
 
 basicConfig()
@@ -156,23 +156,25 @@ class FileClient():
 class FileProperty():
     """File property"""
 
-    def __init__(self, file_manager, field, saving=False):
-        self.file_manager = file_manager
-        self.field = field
+    def __init__(self, integer_field, file_client, saving=False):
+        self.integer_field = integer_field
+        self.file_client = file_client
         self.saving = saving
 
     def __get__(self, instance, instance_type=None):
         if instance is not None:
-            return self.file_manager.get(self.field)
+            return self.file_client.get(
+                getattr(instance, self.integer_field.name))
         return self
 
     def __set__(self, instance, value):
         try:
-            self.file_manager.delete(self.field)
+            self.file_client.delete(getattr(instance, self.integer_field.name))
         except FileError as e:
             logger.error(e)
 
-        self.field = self.file_manager.add(value)
+        setattr(instance, self.integer_field.name,
+                self.file_client.add(value))
 
         if self.saving:
             instance.save()
