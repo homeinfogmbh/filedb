@@ -13,10 +13,10 @@ logger = getLogger(__name__)
 class FileProperty():
     """File property"""
 
-    def __init__(self, integer_field, file_client, saving=False):
+    def __init__(self, integer_field, file_client, autosave=False):
         self.integer_field = integer_field
         self.file_client = file_client
-        self.saving = saving
+        self.autosave = autosave
 
     def __get__(self, instance, instance_type=None):
         """Returns file data from filedb using
@@ -42,8 +42,9 @@ class FileProperty():
                 logger.error(e)
 
             if value is not None:
-                setattr(instance, self.integer_field.name,
-                        self.file_client.add(value))
+                value = self.file_client.add(value)
 
-            if self.saving:
+            setattr(instance, self.integer_field.name, value)
+
+            if self.autosave:
                 instance.save()
