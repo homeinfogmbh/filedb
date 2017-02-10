@@ -25,10 +25,6 @@ class FileProperty():
         return self
 
     def __set__(self, instance, value):
-        print(instance)
-        print(self.integer_field)
-        print(self.integer_field.name)
-
         if instance is not None:
             try:
                 self.file_client.delete(
