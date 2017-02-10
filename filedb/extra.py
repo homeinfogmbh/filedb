@@ -30,6 +30,10 @@ class FileProperty():
         except FileError as e:
             logger.error(e)
 
+        print(instance)
+        print(self.integer_field)
+        print(self.integer_field.name)
+
         setattr(instance, self.integer_field.name,
                 self.file_client.add(value))
 
