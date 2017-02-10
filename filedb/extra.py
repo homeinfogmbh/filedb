@@ -77,10 +77,11 @@ class FileProperty():
 
                 instance.save()
             else:
-                self.old_values.append(current_value)
+                if current_value is not None:
+                    self.old_values.append(current_value)
 
-                if instance.save.__class__ is not SaveCallback:
-                    instance.save = SaveCallback(instance, self)
+                    if instance.save.__class__ is not SaveCallback:
+                        instance.save = SaveCallback(instance, self)
 
     def delete(self, file_id):
         """Deletes the old file"""
