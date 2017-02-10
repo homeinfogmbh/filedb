@@ -66,22 +66,23 @@ class FileProperty():
         if instance is not None:
             current_value = getattr(instance, self.integer_field.name)
 
-            if new_value is not None:
-                new_value = self.file_client.add(new_value)
+            if new_value != current_value:
+                if new_value is not None:
+                    new_value = self.file_client.add(new_value)
 
-            setattr(instance, self.integer_field.name, new_value)
+                setattr(instance, self.integer_field.name, new_value)
 
-            if self.autosave:
-                if current_value is not None:
-                    self.delete(current_value)
+                if self.autosave:
+                    if current_value is not None:
+                        self.delete(current_value)
 
-                instance.save()
-            else:
-                if current_value is not None:
-                    self.old_values.append(current_value)
+                    instance.save()
+                else:
+                    if current_value is not None:
+                        self.old_values.append(current_value)
 
-                    if instance.save.__class__ is not SaveCallback:
-                        instance.save = SaveCallback(instance, self)
+                        if instance.save.__class__ is not SaveCallback:
+                            instance.save = SaveCallback(instance, self)
 
     def delete(self, file_id):
         """Deletes the old file"""
