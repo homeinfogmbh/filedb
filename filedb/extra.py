@@ -25,17 +25,20 @@ class FileProperty():
         return self
 
     def __set__(self, instance, value):
-        try:
-            self.file_client.delete(getattr(instance, self.integer_field.name))
-        except FileError as e:
-            logger.error(e)
-
         print(instance)
         print(self.integer_field)
         print(self.integer_field.name)
 
-        setattr(instance, self.integer_field.name,
-                self.file_client.add(value))
+        if instance is not None:
+            try:
+                self.file_client.delete(
+                    getattr(instance, self.integer_field.name))
+            except FileError as e:
+                logger.error(e)
 
-        if self.saving:
-            instance.save()
+            if value is not None:
+                setattr(instance, self.integer_field.name,
+                        self.file_client.add(value))
+
+            if self.saving:
+                instance.save()
