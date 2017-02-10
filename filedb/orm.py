@@ -252,7 +252,7 @@ class Permission(FileDBModel):
     """Keys allowed to access the filedb"""
 
     key = CharField(36)
-    get = BooleanField()
+    get_ = BooleanField(db_column='get')
     post = BooleanField()
     delete = BooleanField()
     annotation = CharField(255)
@@ -261,7 +261,7 @@ class Permission(FileDBModel):
         """Returns a human readable representation"""
         return '{key}: {get}{post}{delete} ({annotation})'.format(
             key=self.key,
-            get='g' if self.get else '-',
+            get='g' if self.get_ else '-',
             post='p' if self.post else '-',
             delete='d' if self.delete else '-',
             annotation=self.annotation)
