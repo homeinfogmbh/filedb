@@ -56,3 +56,4 @@ class FileProperty():
                 new_value = None
 
             setattr(instance, self.integer_field.name, new_value)
+            instance.save()     # XXX: Important for consistency!
