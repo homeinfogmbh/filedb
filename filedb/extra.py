@@ -47,13 +47,13 @@ class FileProperty():
         if instance is not None:
             previous_value = getattr(instance, self.integer_field.name)
 
-            if previous_value is not None:
-                self.file_client.delete(previous_value)
-
             if data is not None:
                 new_value = self.file_client.add(data)
             else:
                 new_value = None
+
+            if previous_value is not None:
+                self.file_client.delete(previous_value)
 
             setattr(instance, self.integer_field.name, new_value)
             instance.save()     # XXX: Important for consistency!
