@@ -19,12 +19,21 @@ class FileProperty():
         self.saving = saving
 
     def __get__(self, instance, instance_type=None):
+        """Returns file data from filedb using
+        file_client and value from inter_field
+        """
         if instance is not None:
-            return self.file_client.get(
-                getattr(instance, self.integer_field.name))
-        return self
+            value = getattr(instance, self.integer_field.name)
+
+            if value is not None:
+                return self.file_client.get(value)
+        else:
+            return self
 
     def __set__(self, instance, value):
+        """Stores file data within filedb using
+        file_client and value from inter_field
+        """
         if instance is not None:
             try:
                 self.file_client.delete(
