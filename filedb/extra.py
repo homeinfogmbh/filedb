@@ -1,13 +1,9 @@
 """Extra hacks"""
 
-from logging import basicConfig, getLogger
-from filedb.http import FileError, FileClient
+from filedb.http import FileClient
 
 __all__ = ['FileProperty']
 
-
-basicConfig()
-logger = getLogger(__name__)
 _param_err = ValueError('Need either file_client or key')
 
 
@@ -20,8 +16,14 @@ class SaveCallback():
         self.old_save = self.instance.save
 
     def __call__(self, *args, **kwargs):
-        while self.field.old_values:
-            self.field.delete(self.field.old_values.pop())
+        if self.field.new_value is not None:
+            setattr(self.instance, self.field.integer_field.name,
+                    self.field.file_client.add(self.field.new_value))
+            self.field.new_value = None
+
+        if self.field.old_value is not None:
+            self.field.file_client.delete(self.field.old_value)
+            self.field.old_value = None
 
         self.instance.__class__.save(self.instance)
         self.instance.save = self.old_save
@@ -30,8 +32,7 @@ class SaveCallback():
 class FileProperty():
     """File property"""
 
-    def __init__(self, integer_field, file_client=None,
-                 key=None, autosave=False):
+    def __init__(self, integer_field, file_client=None, key=None):
         self.integer_field = integer_field
 
         if file_client is not None and key is not None:
@@ -44,8 +45,8 @@ class FileProperty():
             raise _param_err
 
         self.file_client = file_client
-        self.autosave = autosave
-        self.old_values = []
+        self.old_value = None
+        self.new_value = None
 
     def __get__(self, instance, instance_type=None):
         """Returns file data from filedb using
@@ -64,30 +65,13 @@ class FileProperty():
         file_client and value from inter_field
         """
         if instance is not None:
-            current_value = getattr(instance, self.integer_field.name)
+            if self.old_value is None:
+                self.old_value = getattr(instance, self.integer_field.name)
 
-            if data is not None:
-                new_value = self.file_client.add(data)
-            else:
-                new_value = None
+            self.new_value = data
 
-            setattr(instance, self.integer_field.name, new_value)
-
-            if self.autosave:
-                if current_value is not None:
-                    self.delete(current_value)
-
-                instance.save()
-            else:
-                if current_value is not None:
-                    self.old_values.append(current_value)
-
-                    if instance.save.__class__ is not SaveCallback:
-                        instance.save = SaveCallback(instance, self)
+            if instance.save.__class__ is not SaveCallback:
+                instance.save = SaveCallback(instance, self)
 
     def delete(self, file_id):
         """Deletes the old file"""
-        try:
-            self.file_client.delete(file_id)
-        except FileError as e:
-            logger.error(e.result)
