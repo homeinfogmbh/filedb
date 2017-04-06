@@ -10,9 +10,9 @@ from logging import getLogger
 from peewee import Model, CharField, IntegerField, DoesNotExist,\
     DateTimeField, PrimaryKeyField, BooleanField
 
-from homeinfo.lib.mime import mimetype
-from homeinfo.lib.misc import classproperty
-from homeinfo.peewee import MySQLDatabase
+from peeweeplus import MySQLDatabase
+from mimeutil import mimetype
+from homeinfo.misc import classproperty
 
 from filedb.config import config
 

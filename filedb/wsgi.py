@@ -2,8 +2,7 @@
 
 from peewee import DoesNotExist
 
-from homeinfo.lib.rest import ResourceHandler
-from homeinfo.lib.wsgi import OK, Error, Binary, InternalServerError
+from wsgilib import OK, Error, Binary, InternalServerError, ResourceHandler
 
 from filedb.orm import File, ChecksumMismatch, Permission
 

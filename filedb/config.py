@@ -1,11 +1,11 @@
 """Configuration for HOMEINFO's global file database"""
 
-from homeinfo.lib.config import Configuration
+from configparserplus import ConfigParserPlus
 
 __all__ = ['config']
 
 
-class FileDBConfig(Configuration):
+class FileDBConfig(ConfigParserPlus):
     """Main configuration for the file database"""
 
     @property

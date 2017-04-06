@@ -4,10 +4,8 @@ from distutils.core import setup
 
 setup(
     name='filedb',
-    version='1.0',
+    version='latest',
     author='Richard Neumann',
-    author_email='mail@richard-neumann.de',
-    requires=['peewee', 'homeinfo'],
     packages=['filedb'],
     data_files=[
         ('/etc', ['files/etc/filedb.conf']),
@@ -16,5 +14,4 @@ setup(
         ('/usr/share/filedb',
          ['files/usr/share/filedb/filedb.wsgi'])],
     license=open('LICENSE.txt').read(),
-    description='HOMEINFO ORM database root',
-    long_description=open('README.txt').read())
+    description='HOMEINFO ORM database root')
