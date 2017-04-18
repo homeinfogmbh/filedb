@@ -5,12 +5,12 @@ from os.path import join, isfile
 from hashlib import sha256
 from base64 import b64encode
 from datetime import datetime
-from logging import getLogger
 
 from peewee import Model, CharField, IntegerField, DoesNotExist,\
     DateTimeField, PrimaryKeyField, BooleanField
 
 from peeweeplus import MySQLDatabase
+from fancylog import Logger
 from mimeutil import mimetype
 from homeinfo.misc import classproperty
 
@@ -19,7 +19,7 @@ from filedb.config import config
 __all__ = ['ChecksumMismatch', 'File', 'Permission']
 
 
-logger = getLogger(__file__)
+logger = Logger('filedb')
 
 
 class ChecksumMismatch(Exception):
