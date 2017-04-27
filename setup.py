@@ -13,5 +13,4 @@ setup(
          ['files/etc/uwsgi/apps-available/filedb.ini']),
         ('/usr/share/filedb',
          ['files/usr/share/filedb/filedb.wsgi'])],
-    license=open('LICENSE.txt').read(),
-    description='HOMEINFO ORM database root')
+    description='A file database')
