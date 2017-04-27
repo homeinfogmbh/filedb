@@ -14,7 +14,8 @@ class FileProperty():
     the DB model for reasons of consistency.
     """
 
-    def __init__(self, integer_field, file_client=None, key=None):
+    def __init__(self, integer_field, file_client=None,
+                 key=None, consistent=True):
         self.integer_field = integer_field
 
         if file_client is not None and key is not None:
@@ -27,6 +28,7 @@ class FileProperty():
             raise _param_err
 
         self.file_client = file_client
+        self.consistent = consistent
 
     def __get__(self, instance, instance_type=None):
         """Returns file data from filedb using
@@ -56,4 +58,6 @@ class FileProperty():
                 self.file_client.delete(previous_value)
 
             setattr(instance, self.integer_field.name, new_value)
-            instance.save()     # XXX: Important for consistency!
+
+            if self.consistent:
+                instance.save()
