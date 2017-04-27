@@ -54,9 +54,9 @@ class FileDBModel(Model):
     class Meta:
         database = MySQLDatabase(
             'filedb',
-            host=config.db['host'],
-            user=config.db['user'],
-            passwd=config.db['passwd'],
+            host=config['db']['host'],
+            user=config['db']['user'],
+            passwd=config['db']['passwd'],
             closing=True)
         schema = database.database
 
@@ -78,7 +78,7 @@ class File(FileDBModel):
     @classmethod
     def mode(self):
         """Returns the default file mode"""
-        return int(config.fs['mode'], 8)
+        return int(config['fs']['mode'], 8)
 
     @classmethod
     def add(cls, f):
@@ -168,7 +168,7 @@ class File(FileDBModel):
     @property
     def path(self):
         """Returns the file's path"""
-        return join(config.fs['BASE_DIR'], self.sha256sum)
+        return join(config['fs']['BASE_DIR'], self.sha256sum)
 
     def touch(self):
         """Update access counters"""

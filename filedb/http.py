@@ -34,7 +34,7 @@ class FileClient():
     @property
     def base_url(self):
         """Returns the base URL"""
-        return config.www['BASE_URL']
+        return config['www']['BASE_URL']
 
     def add(self, data, debug=False):
         """Adds a file"""
