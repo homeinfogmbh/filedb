@@ -8,7 +8,6 @@ setup(
     author='Richard Neumann',
     packages=['filedb'],
     data_files=[
-        ('/etc', ['files/etc/filedb.conf']),
         ('/etc/uwsgi/apps-available',
          ['files/etc/uwsgi/apps-available/filedb.ini']),
         ('/usr/share/filedb',
