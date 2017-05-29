@@ -96,7 +96,7 @@ class File(FileDBModel):
             except AttributeError:
                 # Finally assume bytes
                 data = f
-        except (OSError, TypeError):
+        except (OSError, TypeError, ValueError):
             data = f
 
         if data:
