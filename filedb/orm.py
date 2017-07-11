@@ -237,7 +237,8 @@ class File(FileDBModel):
             else:
                 return result
         else:
-            return self.save()
+            self.save()
+            return True
 
     def remove(self):
         """Alias to unlink"""
