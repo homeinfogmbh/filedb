@@ -99,10 +99,10 @@ class FileClient():
             else:
                 return False
 
-    def _get_metadata(self, ident, query, debug=False):
+    def _get_metadata(self, ident, metadata, debug=False):
         """Gets metadata"""
         params = self.params
-        params['query'] = query
+        params['metadata'] = metadata
         result = get(join(self.base_url, str(ident)), params=params)
 
         if debug:
