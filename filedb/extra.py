@@ -4,8 +4,6 @@ from filedb.http import FileClient
 
 __all__ = ['FileProperty']
 
-_param_err = ValueError('Need either file_client or key')
-
 
 class FileProperty():
     """File property
@@ -14,18 +12,20 @@ class FileProperty():
     the DB model for reasons of consistency.
     """
 
+    _param_err = ValueError('Need either file_client or key')
+
     def __init__(self, integer_field, file_client=None,
                  key=None, consistent=True):
         self.integer_field = integer_field
 
         if file_client is not None and key is not None:
-            raise _param_err
+            raise self._param_err
         elif file_client is not None:
             self.file_client = file_client
         elif key is not None:
             self.file_client = FileClient(key)
         else:
-            raise _param_err
+            raise self._param_err
 
         self.file_client = file_client
         self.consistent = consistent

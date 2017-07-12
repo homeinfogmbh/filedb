@@ -240,9 +240,9 @@ class File(FileDBModel):
             self.save()
             return True
 
-    def remove(self):
+    def remove(self, force=False):
         """Alias to unlink"""
-        return self.unlink()
+        return self.unlink(force=force)
 
     def __str__(self):
         """Converts the file to a string"""
