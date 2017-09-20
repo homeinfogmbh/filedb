@@ -1,8 +1,8 @@
 """Configuration for HOMEINFO's global file database"""
 
-from configparserplus import ConfigParserPlus
+from configlib import INIParser
 
 __all__ = ['config']
 
 
-config = ConfigParserPlus('/etc/filedb.conf')
+config = INIParser('/etc/filedb.conf')
