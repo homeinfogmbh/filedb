@@ -1,10 +1,9 @@
 """Models for HOMEINFO's global file database"""
 
-from os import unlink, chmod
-from os.path import join, isfile
-from hashlib import sha256
 from base64 import b64encode
 from datetime import datetime
+from hashlib import sha256
+from pathlib import Path
 
 from peewee import Model, CharField, IntegerField, DoesNotExist,\
     DateTimeField, PrimaryKeyField, BooleanField
@@ -12,14 +11,15 @@ from peewee import Model, CharField, IntegerField, DoesNotExist,\
 from peeweeplus import MySQLDatabase
 from fancylog import Logger
 from mimeutil import mimetype
-from homeinfo.misc import classproperty
 
 from filedb.config import CONFIG
 
 __all__ = ['ChecksumMismatch', 'File', 'Permission']
 
 
-logger = Logger('filedb')
+LOGGER = Logger('filedb')
+BASEDIR = Path(CONFIG['fs']['BASE_DIR'])
+MODE = int(CONFIG['fs']['mode'], 8)
 
 
 class ChecksumMismatch(Exception):
@@ -27,6 +27,7 @@ class ChecksumMismatch(Exception):
 
     def __init__(self, expected_value, actual_value):
         """Sets expected and actual value"""
+        super().__init__(expected_value, actual_value)
         self._expected_value = expected_value
         self._actual_value = actual_value
 
@@ -74,28 +75,22 @@ class File(FileDBModel):
     last_access = DateTimeField(null=True, default=None)
     accessed = IntegerField(default=0)
 
-    @classproperty
     @classmethod
-    def mode(self):
-        """Returns the default file mode."""
-        return int(CONFIG['fs']['mode'], 8)
-
-    @classmethod
-    def add(cls, f):
+    def add(cls, fileobj):
         """Add a new file uniquely."""
         try:
             # Assume file path first
-            with open(f, 'rb') as fh:
-                data = fh.read()
+            with open(fileobj, 'rb') as file:
+                data = file.read()
         except FileNotFoundError:
             try:
                 # Assume file handler
-                data = f.read()
+                data = fileobj.read()
             except AttributeError:
                 # Finally assume bytes
-                data = f
+                data = fileobj
         except (OSError, TypeError, ValueError):
-            data = f
+            data = fileobj
 
         if data:
             mime = mimetype(data)
@@ -108,8 +103,8 @@ class File(FileDBModel):
             else:
                 if not record.exists:
                     # Fix missing files on file system
-                    with open(record.path, 'wb') as f:
-                        f.write(data)
+                    with open(str(record.path), 'wb') as file:
+                        file.write(data)
 
                 record.hardlinks += 1
                 record.save()
@@ -128,10 +123,10 @@ class File(FileDBModel):
         record.hardlinks = 1
         path = record.path
 
-        with open(path, 'wb') as f:
-            f.write(data)
+        with open(str(path), 'wb') as file:
+            file.write(data)
 
-        chmod(path, cls.mode)
+        path.chmod(MODE)
         record.save()
         return record
 
@@ -142,11 +137,11 @@ class File(FileDBModel):
             try:
                 record = cls.get(cls.id == orphan)
             except DoesNotExist:
-                logger.warning('No such record: {}'.format(orphan))
+                LOGGER.warning('No such record: {}'.format(orphan))
             else:
                 # Forcibly remove record
                 record.unlink(force=True)
-                logger.info('Unlinked: {}'.format(record.id))
+                LOGGER.info('Unlinked: {}'.format(record.id))
 
     @classmethod
     def update_hardlinks(cls, references):
@@ -155,18 +150,18 @@ class File(FileDBModel):
             try:
                 record = cls.get(cls.id == ident)
             except DoesNotExist:
-                logger.warning('No such record: {}'.format(ident))
+                LOGGER.warning('No such record: {}'.format(ident))
             else:
                 record.hardlinks = references[ident]
                 record.save()
-                logger.info(
+                LOGGER.info(
                     'Set hard links of #{record.id} to '
                     '{record.hardlinks}'.format(record=record))
 
     @property
     def path(self):
         """Returns the file's path."""
-        return join(CONFIG['fs']['BASE_DIR'], self.sha256sum)
+        return BASEDIR.joinpath(self.sha256sum)
 
     def touch(self):
         """Update access counters."""
@@ -182,8 +177,8 @@ class File(FileDBModel):
 
         if checksum == self.sha256sum:
             return data
-        else:
-            raise ChecksumMismatch(self.sha256sum, checksum)
+
+        raise ChecksumMismatch(self.sha256sum, checksum)
 
     @property
     def base64(self):
@@ -193,7 +188,7 @@ class File(FileDBModel):
     @property
     def exists(self):
         """Checks if the file exists on the system."""
-        return isfile(self.path)
+        return self.path.is_file()
 
     @property
     def consistent(self):
@@ -211,32 +206,31 @@ class File(FileDBModel):
         """Delegate reading to file handler."""
         self.touch()
 
-        with open(self.path, 'rb') as f:
-            return f.read(count)
+        with open(str(self.path), 'rb') as file:
+            return file.read(count)
 
     def unlink(self, force=False):
         """Unlinks / removes the file."""
         self.hardlinks += -1
 
         if not self.hardlinks or force:
-            path = self.path
-            result = self.delete_instance()
-
             try:
-                unlink(path)
+                self.path.unlink()
             except FileNotFoundError:
-                print('filedb:', 'Could not delete file',
-                      path, '-', 'Does not exist')
+                LOGGER.error(
+                    'Could not delete non-existing file: "{}".'.format(
+                        self.path))
                 return False
             except PermissionError:
-                print('filedb:', 'Could not delete file',
-                      path, '-', 'Insufficient permissions')
+                LOGGER.error(
+                    'Could not delete file "{}" due to insufficient '
+                    'permissions'.format(self.path))
                 return False
-            else:
-                return result
-        else:
-            self.save()
-            return True
+
+            return self.delete_instance()
+
+        self.save()
+        return True
 
     def remove(self, force=False):
         """Alias to unlink."""
