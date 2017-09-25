@@ -4,16 +4,40 @@ from peewee import DoesNotExist
 
 from wsgilib import OK, Error, Binary, InternalServerError, ResourceHandler
 
+from filedb.config import TIME_FORMAT
 from filedb.orm import File, ChecksumMismatch, Permission
 
 __all__ = ['FileDB']
+
+
+METADATA = {
+    'sha256sum': lambda file: file.sha256sum,
+    'size': lambda file: str(file.size),
+    'hardlinks': lambda file: str(file.hardlinks),
+    'mimetype': lambda file: file.mimetype,
+    'accessed': lambda file: str(file.accessed),
+    'last_access': (
+        lambda file: 'never' if file.last_access is None
+        else file.last_access.strftime(TIME_FORMAT)),
+    'created': lambda file: file.created.strftime(TIME_FORMAT)}
+
+
+def get_metadata(file, metadata):
+    """Returns file meta data."""
+
+    try:
+        function = METADATA[metadata]
+    except KeyError:
+        raise Error('Unknown metadata.', status=400) from None
+    else:
+        return OK(function(file))
 
 
 class FileDB(ResourceHandler):
     """Handles requests for the FileDBController"""
 
     @property
-    def _ident(self):
+    def ident(self):
         """Returns the appropriate file identifier"""
         try:
             return int(self.resource)
@@ -23,7 +47,7 @@ class FileDB(ResourceHandler):
             raise Error('Missing identifier.', status=400) from None
 
     @property
-    def _perm(self):
+    def perm(self):
         """Authenticate an access"""
         try:
             key = self.query['key']
@@ -35,62 +59,46 @@ class FileDB(ResourceHandler):
             except DoesNotExist:
                 raise Error('Not authorized.', status=403) from None
 
+    def _get_data(self, file):
+        """Returns actual file data."""
+        try:
+            if self.query.get('nocheck'):
+                data = file.read()
+            else:
+                data = file.data
+        except FileNotFoundError:
+            raise Error('File not found.', status=500) from None
+        except PermissionError:
+            raise Error('Cannot read file.', status=500) from None
+        except ChecksumMismatch:
+            raise Error('Corrupted file.', status=500) from None
+        else:
+            return Binary(data)
+
     def get(self):
         """Gets a file by its ID"""
-        if self._perm.get_:
+        if self.perm.get_:
             try:
-                f = File.get(File.id == self._ident)
+                file = File.get(File.id == self.ident)
             except DoesNotExist:
                 raise Error('No such file', status=404) from None
             else:
                 metadata = self.query.get('metadata')
-                time_format = self.query.get(
-                    'time_format', '%Y-%m-%dT%H:%M:%S')
 
                 if metadata is None:
-                    try:
-                        if self.query.get('nocheck'):
-                            # Skip SHA-256 checksum check
-                            data = f.read()
-                        else:
-                            data = f.data
-                    except FileNotFoundError:
-                        raise Error('File not found.', status=500) from None
-                    except PermissionError:
-                        raise Error('Cannot read file.', status=500) from None
-                    except ChecksumMismatch:
-                        raise Error('Corrupted file.', status=500) from None
-                    else:
-                        return Binary(data)
-                elif metadata == 'sha256sum':
-                    return OK(f.sha256sum)
-                elif metadata == 'size':
-                    return OK(str(f.size))
-                elif metadata == 'hardlinks':
-                    return OK(str(f.hardlinks))
-                elif metadata == 'mimetype':
-                    return OK(f.mimetype)
-                elif metadata == 'accessed':
-                    return OK(str(f.accessed))
-                elif metadata == 'last_access':
-                    if f.last_access is not None:
-                        return OK(f.last_access.strftime(time_format))
-                    else:
-                        return OK('never')
-                elif metadata == 'created':
-                    return OK(f.created.strftime(time_format))
-                else:
-                    raise Error('Unknown metadata.', status=400) from None
+                    return self._get_data(file)
+
+                return get_metadata(file, metadata)
         else:
             raise Error('Not authorized.', status=403) from None
 
     def post(self):
         """Stores a (new) file"""
-        if self._perm.post:
+        if self.perm.post:
             try:
                 record = File.add(self.data.bytes)
-            except Exception as e:
-                raise InternalServerError(str(e)) from None
+            except Exception as error:
+                raise InternalServerError(str(error)) from None
             else:
                 return OK(str(record.id))
         else:
@@ -98,26 +106,26 @@ class FileDB(ResourceHandler):
 
     def put(self):
         """Increases the reference counter"""
-        if self._perm.post:  # Use POST permissions for now
+        if self.perm.post:  # Use POST permissions for now
             try:
-                f = File.get(File.id == self._ident)
+                file = File.get(File.id == self.ident)
             except DoesNotExist:
                 raise Error('No such file.', status=404) from None
             else:
-                f.hardlinks += 1
-                f.save()
+                file.hardlinks += 1
+                file.save()
                 return OK()
         else:
             raise Error('Not authorized.', status=403) from None
 
     def delete(self):
         """Deletes a file"""
-        if self._perm.delete:
+        if self.perm.delete:
             try:
-                f = File.get(File.id == self._ident)
+                file = File.get(File.id == self.ident)
             except DoesNotExist:
                 raise Error('No such file.', status=400) from None
             else:
-                return OK(str(f.unlink()))
+                return OK(str(file.unlink()))
         else:
             raise Error('Not authorized.', status=400) from None
