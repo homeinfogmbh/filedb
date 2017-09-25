@@ -88,7 +88,7 @@ class FileDB(ResourceHandler):
         """Stores a (new) file"""
         if self._perm.post:
             try:
-                record = File.add(self.data)
+                record = File.add(self.data.bytes)
             except Exception as e:
                 raise InternalServerError(str(e)) from None
             else:
