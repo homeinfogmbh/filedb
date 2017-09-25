@@ -14,7 +14,7 @@ from fancylog import Logger
 from mimeutil import mimetype
 from homeinfo.misc import classproperty
 
-from filedb.config import config
+from filedb.config import CONFIG
 
 __all__ = ['ChecksumMismatch', 'File', 'Permission']
 
@@ -23,7 +23,7 @@ logger = Logger('filedb')
 
 
 class ChecksumMismatch(Exception):
-    """Indicates inconsistency between file checksums"""
+    """Indicates inconsistency between file checksums."""
 
     def __init__(self, expected_value, actual_value):
         """Sets expected and actual value"""
@@ -32,16 +32,16 @@ class ChecksumMismatch(Exception):
 
     @property
     def expected_value(self):
-        """Returns the expected value"""
+        """Returns the expected value."""
         return self._expected_value
 
     @property
     def actual_value(self):
-        """Returns the actual value"""
+        """Returns the actual value."""
         return self._actual_value
 
     def __str__(self):
-        """Converts to a string"""
+        """Converts to a string."""
         return '\n'.join([
             'File checksums do not match',
             ' '.join(['    expected:', str(self.expected_value)]),
@@ -49,14 +49,14 @@ class ChecksumMismatch(Exception):
 
 
 class FileDBModel(Model):
-    """A basic model for the file database"""
+    """A basic model for the file database."""
 
     class Meta:
         database = MySQLDatabase(
             'filedb',
-            host=config['db']['host'],
-            user=config['db']['user'],
-            passwd=config['db']['passwd'],
+            host=CONFIG['db']['host'],
+            user=CONFIG['db']['user'],
+            passwd=CONFIG['db']['passwd'],
             closing=True)
         schema = database.database
 
@@ -64,7 +64,7 @@ class FileDBModel(Model):
 
 
 class File(FileDBModel):
-    """A file entry"""
+    """A file entry."""
 
     mimetype = CharField(255)
     sha256sum = CharField(64)
@@ -77,14 +77,12 @@ class File(FileDBModel):
     @classproperty
     @classmethod
     def mode(self):
-        """Returns the default file mode"""
-        return int(config['fs']['mode'], 8)
+        """Returns the default file mode."""
+        return int(CONFIG['fs']['mode'], 8)
 
     @classmethod
     def add(cls, f):
-        """Add a new file uniquely
-        XXX: f can be either a path, file handler or bytes
-        """
+        """Add a new file uniquely."""
         try:
             # Assume file path first
             with open(f, 'rb') as fh:
@@ -121,7 +119,7 @@ class File(FileDBModel):
 
     @classmethod
     def _add(cls, data, checksum, mime):
-        """Forcibly adds a file"""
+        """Forcibly adds a file."""
         record = cls()
         record.mimetype = mime
         record.sha256sum = checksum
@@ -139,7 +137,7 @@ class File(FileDBModel):
 
     @classmethod
     def purge(cls, orphans):
-        """Purge orphans from the filedb"""
+        """Purge orphans from the filedb."""
         for orphan in orphans:
             try:
                 record = cls.get(cls.id == orphan)
@@ -152,7 +150,7 @@ class File(FileDBModel):
 
     @classmethod
     def update_hardlinks(cls, references):
-        """Fixes the hard links to the given reference dictionary"""
+        """Fixes the hard links to the given reference dictionary."""
         for ident in references:
             try:
                 record = cls.get(cls.id == ident)
@@ -167,18 +165,18 @@ class File(FileDBModel):
 
     @property
     def path(self):
-        """Returns the file's path"""
-        return join(config['fs']['BASE_DIR'], self.sha256sum)
+        """Returns the file's path."""
+        return join(CONFIG['fs']['BASE_DIR'], self.sha256sum)
 
     def touch(self):
-        """Update access counters"""
+        """Update access counters."""
         self.accessed += 1
         self.last_access = datetime.now()
         self.save()
 
     @property
     def data(self):
-        """Reads the file's content safely"""
+        """Reads the file's content safely."""
         data = self.read()
         checksum = sha256(data).hexdigest()
 
@@ -189,17 +187,17 @@ class File(FileDBModel):
 
     @property
     def base64(self):
-        """Returns the file's data base64 encoded"""
+        """Returns the file's data base64 encoded."""
         return b64encode(self.data)
 
     @property
     def exists(self):
-        """Checks if the file exists on the system"""
+        """Checks if the file exists on the system."""
         return isfile(self.path)
 
     @property
     def consistent(self):
-        """Checks for consistency"""
+        """Checks for consistency."""
         try:
             self.data
         except ChecksumMismatch:
@@ -210,14 +208,14 @@ class File(FileDBModel):
             return True
 
     def read(self, count=None):
-        """Delegate reading to file handler"""
+        """Delegate reading to file handler."""
         self.touch()
 
         with open(self.path, 'rb') as f:
             return f.read(count)
 
     def unlink(self, force=False):
-        """Unlinks / removes the file"""
+        """Unlinks / removes the file."""
         self.hardlinks += -1
 
         if not self.hardlinks or force:
@@ -241,16 +239,16 @@ class File(FileDBModel):
             return True
 
     def remove(self, force=False):
-        """Alias to unlink"""
+        """Alias to unlink."""
         return self.unlink(force=force)
 
     def __str__(self):
-        """Converts the file to a string"""
+        """Converts the file to a string."""
         return str(self.sha256sum)
 
 
 class Permission(FileDBModel):
-    """Keys allowed to access the filedb"""
+    """Keys allowed to access the filedb."""
 
     key = CharField(36)
     get_ = BooleanField(db_column='get')
@@ -259,7 +257,7 @@ class Permission(FileDBModel):
     annotation = CharField(255)
 
     def __str__(self):
-        """Returns a human readable representation"""
+        """Returns a human readable representation."""
         return '{key}: {get}{post}{delete} ({annotation})'.format(
             key=self.key,
             get='g' if self.get_ else '-',
