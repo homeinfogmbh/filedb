@@ -5,7 +5,7 @@ from datetime import datetime
 
 from requests import post, get, put, delete
 
-from filedb.config import config
+from filedb.config import CONFIG, TIME_FORMAT
 
 __all__ = ['FileError', 'FileClient']
 
@@ -34,7 +34,7 @@ class FileClient():
     @property
     def base_url(self):
         """Returns the base URL"""
-        return config['www']['BASE_URL']
+        return CONFIG['www']['BASE_URL']
 
     def add(self, data, debug=False):
         """Adds a file"""
@@ -93,11 +93,8 @@ class FileClient():
 
         if debug:
             return result
-        else:
-            if result.status_code == 200:
-                return True
-            else:
-                return False
+
+        return result.status_code == 200
 
     def _get_metadata(self, ident, metadata, debug=False):
         """Gets metadata"""
@@ -133,16 +130,16 @@ class FileClient():
         """Gets the access count of the file"""
         return int(self._get_metadata(ident, 'accessed', debug=debug))
 
-    def last_access(self, ident, debug=False, tf='%Y-%m-%dT%H:%M:%S'):
+    def last_access(self, ident, debug=False, time_format=TIME_FORMAT):
         """Gets the last access datetime of the file"""
-        la = self._get_metadata(ident, 'last_access', debug=debug)
+        last_access = self._get_metadata(ident, 'last_access', debug=debug)
 
-        if la == 'never':
+        if last_access == 'never':
             return None
-        else:
-            return datetime.strptime(la, tf)
 
-    def created(self, ident, debug=False, tf='%Y-%m-%dT%H:%M:%S'):
+        return datetime.strptime(last_access, time_format)
+
+    def created(self, ident, debug=False, time_format=TIME_FORMAT):
         """Gets the datetime of the file's creation"""
         return datetime.strptime(
-            self._get_metadata(ident, 'created', debug=debug), tf)
+            self._get_metadata(ident, 'created', debug=debug), time_format)
