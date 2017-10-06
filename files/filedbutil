@@ -1,0 +1,104 @@
+#! /usr/bin/env python3
+"""filedbutil.
+
+Usage:
+    filedbutil refs
+    filedbutil list
+    filedbutil clean [options]
+
+Options:
+    --non-interactive      Do not ask questions.
+    --this-is-not-a-drill  Do not just simulate cleanup.
+    --help                 Show this page.
+"""
+from itertools import chain
+from json import dumps
+
+from filedb.orm import File
+from openimmodb3 import Immobilie, Attachment
+from openimmodb import Anhang
+from his.mods.fs.orm import Inode
+
+
+REFERENCES = (Immobilie, Attachment, Anhang, Inode)
+
+
+def ask(question, default=False, yes=('yes', 'y'), ignorecase=True):
+    """Ask a question and return accordingly"""
+
+    try:
+        reply = input(question)
+    except (EOFError, KeyboardInterrupt):
+        return False
+
+    if not reply:
+        return default
+
+    if ignorecase:
+        return reply.lower() in (y.lower() for y in yes)
+
+    return reply in yes
+
+
+def clean(files, interactive=True, simulate=True):
+    """Clean filedb records"""
+    for file in File:
+        try:
+            hardlinks = files[file.id]
+        except KeyError:
+            print('File <{}> is not used.'.format(file.id))
+            question = 'Delete file {}? '.format(file.id)
+
+            if not interactive or ask(question):
+                if not simulate:
+                    file.remove()
+
+                print('DELETED {} ({}).'.format(file.id, file.sha256sum))
+            else:
+                print('Keeping {}.'.format(file.id))
+        else:
+            if file.hardlinks != hardlinks:
+                old_hardlinks, file.hardlinks = file.hardlinks, hardlinks
+
+                if not simulate:
+                    file.save()
+
+                print('Updated hardlinks of <{}> from {} to {}.'.format(
+                    file.id, old_hardlinks, hardlinks))
+
+
+def main(options):
+    """Runs the file DB utility."""
+
+    interactive = not options['--non-interactive']
+    simulate = not options['--this-is-not-a-drill']
+    files = {}
+
+    for rr in chain(*REFERENCES):
+        try:
+            files[rr.file] += 1
+        except KeyError:
+            files[rr.file] = 1
+
+    if options['refs']:
+        print('Current references:')
+
+        for ref in REFERENCES:
+            print('   ', ref)
+    elif options['list']:
+        print(dumps(files, indent=2))
+    elif options['clean']:
+        if simulate:
+            print('Just simulating...')
+            sleep(3)
+
+        question = 'Type YES if you really want to clean up: '
+
+        if not interactive or ask(question, yes=('YES',), ignorecase=False):
+            clean(files, interactive=interactive, simulate=simulate)
+
+
+
+if __name__ == '__main__':
+    from docopt import docopt
+    exit_(main(docopt(__doc__)))
