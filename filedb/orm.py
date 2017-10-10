@@ -1,4 +1,4 @@
-"""Models for HOMEINFO's global file database"""
+"""Models for HOMEINFO's global file database."""
 
 from base64 import b64encode
 from datetime import datetime

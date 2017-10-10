@@ -1,4 +1,4 @@
-"""General file DB record and data management"""
+"""General file DB record and data management."""
 
 from filedb.orm import File
 

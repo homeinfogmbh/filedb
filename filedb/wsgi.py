@@ -1,4 +1,4 @@
-"""Web service for REST-based access"""
+"""Web service for REST-based access."""
 
 from peewee import DoesNotExist
 
@@ -34,11 +34,11 @@ def get_metadata(file, metadata):
 
 
 class FileDB(ResourceHandler):
-    """Handles requests for the FileDBController"""
+    """Handles requests for the FileDBController."""
 
     @property
     def ident(self):
-        """Returns the appropriate file identifier"""
+        """Returns the appropriate file identifier."""
         try:
             return int(self.resource)
         except ValueError:
@@ -48,7 +48,7 @@ class FileDB(ResourceHandler):
 
     @property
     def perm(self):
-        """Authenticate an access"""
+        """Authenticate an access."""
         try:
             key = self.query['key']
         except KeyError:
@@ -59,13 +59,21 @@ class FileDB(ResourceHandler):
             except DoesNotExist:
                 raise Error('Not authorized.', status=403) from None
 
-    def _get_data(self, file):
+    @property
+    def file(self):
+        """Returns the respective file."""
+        try:
+            return File.get(File.id == self.ident)
+        except DoesNotExist:
+            raise Error('No such file', status=404) from None
+
+    def _get_data(self):
         """Returns actual file data."""
         try:
             if self.query.get('nocheck'):
-                data = file.read()
+                data = self.file.read()
             else:
-                data = file.data
+                data = self.file.data
         except FileNotFoundError:
             raise Error('File not found.', status=500) from None
         except PermissionError:
@@ -76,24 +84,27 @@ class FileDB(ResourceHandler):
             return Binary(data)
 
     def get(self):
-        """Gets a file by its ID"""
+        """Gets a file by its ID."""
         if self.perm.get_:
-            try:
-                file = File.get(File.id == self.ident)
-            except DoesNotExist:
-                raise Error('No such file', status=404) from None
-            else:
-                metadata = self.query.get('metadata')
+            metadata = self.query.get('metadata')
 
-                if metadata is None:
-                    return self._get_data(file)
+            if metadata is None:
+                return self._get_data()
 
-                return get_metadata(file, metadata)
+            if metadata == 'exists':
+                try:
+                    File.get(File.id == self.ident)
+                except DoesNotExist:
+                    return Error(str(False), status=404)
+                else:
+                    return OK(str(True))
+
+            return get_metadata(self.file, metadata)
         else:
             raise Error('Not authorized.', status=403) from None
 
     def post(self):
-        """Stores a (new) file"""
+        """Stores a (new) file."""
         if self.perm.post:
             try:
                 record = File.add(self.data.bytes)
@@ -105,7 +116,7 @@ class FileDB(ResourceHandler):
             raise Error('Not authorized.', status=403) from None
 
     def put(self):
-        """Increases the reference counter"""
+        """Increases the reference counter."""
         if self.perm.post:  # Use POST permissions for now
             try:
                 file = File.get(File.id == self.ident)
@@ -119,7 +130,7 @@ class FileDB(ResourceHandler):
             raise Error('Not authorized.', status=403) from None
 
     def delete(self):
-        """Deletes a file"""
+        """Deletes a file."""
         if self.perm.delete:
             try:
                 file = File.get(File.id == self.ident)
