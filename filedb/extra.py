@@ -8,11 +8,11 @@ __all__ = ['FileProperty']
 PARAMETER_ERROR = ValueError('Need either file_client or key.')
 
 
-class FileProperty():
-    """File property
+class FileProperty:
+    """File property.
 
-    XXX: Setting to file properties will save
-    the DB model for reasons of consistency.
+    Setting to file properties will save the
+    DB model for reasons of consistency.
     """
 
     def __init__(self, integer_field, file_client=None,
