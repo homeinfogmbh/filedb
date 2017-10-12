@@ -36,7 +36,7 @@ def ask(question, default=False, yes=('yes', 'y'), ignorecase=True):
 
     try:
         reply = input(question)
-    except (EOFError, KeyboardInterrupt):
+    except EOFError:
         return False
 
     if not reply:
@@ -94,9 +94,12 @@ def make_clean(files, interactive, simulate):
             print('Aborted by user.', file=stderr)
             return 1
 
-    if not interactive or ask(
-            CLEANUP_QUESTION, yes=('YES',), ignorecase=False):
-        clean(files, interactive=interactive, simulate=simulate)
+    try:
+        if not interactive or ask(
+                CLEANUP_QUESTION, yes=('YES',), ignorecase=False):
+            clean(files, interactive=interactive, simulate=simulate)
+    except KeyboardInterrupt:
+        print('Aborted by user.', file=stderr)
 
 
 def main(options):
