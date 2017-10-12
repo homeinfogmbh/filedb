@@ -1,4 +1,4 @@
-"""Configuration for HOMEINFO's global file database"""
+"""Configuration for HOMEINFO's global file database."""
 
 from configlib import INIParser
 

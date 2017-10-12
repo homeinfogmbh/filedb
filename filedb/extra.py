@@ -1,4 +1,4 @@
-"""Extra hacks"""
+"""Extra hacks."""
 
 from filedb.http import FileClient
 
@@ -16,7 +16,10 @@ class FileProperty:
     """
 
     def __init__(self, integer_field, file_client=None,
-                 key=None, consistent=True):
+                 key=None, ensure_consistency=True):
+        """Sets the referenced integer field, file client or key
+        and optional flag whether to ensure database consistency.
+        """
         self.integer_field = integer_field
 
         if file_client is not None and key is not None:
@@ -28,12 +31,11 @@ class FileProperty:
         else:
             raise PARAMETER_ERROR
 
-        self.file_client = file_client
-        self.consistent = consistent
+        self.ensure_consistency = ensure_consistency
 
     def __get__(self, instance, instance_type=None):
         """Returns file data from filedb using
-        file_client and value from inter_field
+        file_client and value from inter_field.
         """
         if instance is not None:
             value = getattr(instance, self.integer_field.name)
@@ -45,7 +47,7 @@ class FileProperty:
 
     def __set__(self, instance, data):
         """Stores file data within filedb using
-        file_client and value from inter_field
+        file_client and value from inter_field.
         """
         if instance is not None:
             previous_value = getattr(instance, self.integer_field.name)
@@ -60,5 +62,5 @@ class FileProperty:
 
             setattr(instance, self.integer_field.name, new_value)
 
-            if self.consistent:
+            if self.ensure_consistency:
                 instance.save()

@@ -37,14 +37,11 @@ class FileClient:
         """Returns the base URL."""
         return CONFIG['www']['BASE_URL']
 
-    def add(self, data, debug=False):
+    def add(self, data):
         """Adds a file."""
         if data:
             params = self.params
             result = post(self.base_url, data=data, params=params)
-
-            if debug:
-                return result
 
             if result.status_code == 200:
                 return int(result.text)
@@ -53,7 +50,7 @@ class FileClient:
 
         raise FileError('Refusing to add empty file.')
 
-    def get(self, ident, debug=False, nocheck=False):
+    def get(self, ident, nocheck=False):
         """Gets a file."""
         params = self.params
 
@@ -62,15 +59,12 @@ class FileClient:
 
         result = get(join(self.base_url, str(ident)), params=params)
 
-        if debug:
-            return result
-
         if result.status_code == 200:
             return result.content
 
         raise FileError(result)
 
-    def put(self, ident, debug=False, nocheck=False):
+    def put(self, ident, nocheck=False):
         """Increases reference counter."""
         params = self.params
 
@@ -79,78 +73,67 @@ class FileClient:
 
         result = put(join(self.base_url, str(ident)), params=params)
 
-        if debug:
-            return result
-
         if result.status_code == 200:
             return result.content
 
         raise FileError(result)
 
-    def delete(self, ident, debug=False):
+    def delete(self, ident):
         """Deletes a file."""
         params = self.params
         result = delete(join(self.base_url, str(ident)), params=params)
-
-        if debug:
-            return result
-
         return result.status_code == 200
 
-    def _get_metadata(self, ident, metadata, debug=False, return_values=None):
+    def _get_metadata(self, ident, metadata, return_values=None):
         """Gets metadata."""
         params = self.params
         params['metadata'] = metadata
         result = get(join(self.base_url, str(ident)), params=params)
 
-        if debug:
-            return result
-
-        if return_values is None:
-            if result.status_code == 200:
-                return result.text
-        else:
+        if return_values:
             with suppress(KeyError):
                 return return_values[result.status_code]
+        elif result.status_code == 200:
+            return result.text
 
         raise FileError(result)
 
-    def exists(self, ident, debug=False):
+    def exists(self, ident):
         """Determines whether the respective file exists."""
         return self._get_metadata(
-            ident, 'exists', debug=debug,
+            ident, 'exists',
             return_values={200: True, 404: False})
 
-    def sha256sum(self, ident, debug=False):
+    def sha256sum(self, ident):
         """Gets the SHA-256 checksum of the file."""
-        return self._get_metadata(ident, 'sha256sum', debug=debug)
+        return self._get_metadata(ident, 'sha256sum')
 
-    def size(self, ident, debug=False):
+    def size(self, ident):
         """Gets the file size in bytes."""
-        return int(self._get_metadata(ident, 'size', debug=debug))
+        return int(self._get_metadata(ident, 'size'))
 
-    def hardlinks(self, ident, debug=False):
+    def hardlinks(self, ident):
         """Gets the file size in bytes."""
-        return int(self._get_metadata(ident, 'hardlinks', debug=debug))
+        return int(self._get_metadata(ident, 'hardlinks'))
 
-    def mimetype(self, ident, debug=False):
+    def mimetype(self, ident):
         """Gets the MIME type of the file."""
-        return self._get_metadata(ident, 'mimetype', debug=debug)
+        return self._get_metadata(ident, 'mimetype')
 
-    def accessed(self, ident, debug=False):
+    def accessed(self, ident):
         """Gets the access count of the file."""
-        return int(self._get_metadata(ident, 'accessed', debug=debug))
+        return int(self._get_metadata(ident, 'accessed'))
 
-    def last_access(self, ident, debug=False, time_format=TIME_FORMAT):
+    def last_access(self, ident, time_format=TIME_FORMAT):
         """Gets the last access datetime of the file."""
-        last_access = self._get_metadata(ident, 'last_access', debug=debug)
+        last_access = self._get_metadata(ident, 'last_access')
 
         if last_access == 'never':
             return None
 
         return datetime.strptime(last_access, time_format)
 
-    def created(self, ident, debug=False, time_format=TIME_FORMAT):
+    def created(self, ident, time_format=TIME_FORMAT):
         """Gets the datetime of the file's creation."""
         return datetime.strptime(
-            self._get_metadata(ident, 'created', debug=debug), time_format)
+            self._get_metadata(ident, 'created'), time_format)

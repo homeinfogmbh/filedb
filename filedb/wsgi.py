@@ -85,7 +85,7 @@ class FileDB(ResourceHandler):
 
     def get(self):
         """Gets a file by its ID."""
-        if self.perm.get_:
+        if self.perm.perm_get:
             metadata = self.query.get('metadata')
 
             if metadata is None:
@@ -100,24 +100,24 @@ class FileDB(ResourceHandler):
                     return OK(str(True))
 
             return get_metadata(self.file, metadata)
-        else:
-            raise Error('Not authorized.', status=403) from None
+
+        raise Error('Not authorized.', status=403) from None
 
     def post(self):
         """Stores a (new) file."""
-        if self.perm.post:
+        if self.perm.perm_post:
             try:
                 record = File.add(self.data.bytes)
             except Exception as error:
                 raise InternalServerError(str(error)) from None
             else:
                 return OK(str(record.id))
-        else:
-            raise Error('Not authorized.', status=403) from None
+
+        raise Error('Not authorized.', status=403) from None
 
     def put(self):
         """Increases the reference counter."""
-        if self.perm.post:  # Use POST permissions for now
+        if self.perm.perm_post:  # Use POST permissions for now
             try:
                 file = File.get(File.id == self.ident)
             except DoesNotExist:
@@ -126,17 +126,17 @@ class FileDB(ResourceHandler):
                 file.hardlinks += 1
                 file.save()
                 return OK()
-        else:
-            raise Error('Not authorized.', status=403) from None
+
+        raise Error('Not authorized.', status=403) from None
 
     def delete(self):
         """Deletes a file."""
-        if self.perm.delete:
+        if self.perm.perm_delete:
             try:
                 file = File.get(File.id == self.ident)
             except DoesNotExist:
                 raise Error('No such file.', status=400) from None
             else:
                 return OK(str(file.unlink()))
-        else:
-            raise Error('Not authorized.', status=400) from None
+
+        raise Error('Not authorized.', status=400) from None

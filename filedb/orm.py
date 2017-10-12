@@ -69,7 +69,7 @@ class File(FileDBModel):
 
     mimetype = CharField(255)
     sha256sum = CharField(64)
-    size = IntegerField()   # File size in bytes
+    size = IntegerField()   # File size in bytes.
     hardlinks = IntegerField()
     created = DateTimeField()
     last_access = DateTimeField(null=True, default=None)
@@ -245,16 +245,23 @@ class Permission(FileDBModel):
     """Keys allowed to access the filedb."""
 
     key = CharField(36)
-    get_ = BooleanField(db_column='get')
-    post = BooleanField()
-    delete = BooleanField()
+    perm_get = BooleanField(db_column='get')
+    perm_post = BooleanField(db_column='post')
+    perm_delete = BooleanField(db_column='delete')
     annotation = CharField(255)
 
     def __str__(self):
         """Returns a human readable representation."""
-        return '{key}: {get}{post}{delete} ({annotation})'.format(
-            key=self.key,
-            get='g' if self.get_ else '-',
-            post='p' if self.post else '-',
-            delete='d' if self.delete else '-',
-            annotation=self.annotation)
+        return '{}: {}{}{} ({})'.format(
+            self.key, 'g' if self.perm_get else '-',
+            'p' if self.perm_post else '-', 'd' if self.perm_delete else '-',
+            self.annotation)
+
+    def to_dict(self):
+        """Returns a JSON compliant dictionary."""
+        return {
+            'key': self.key,
+            'get': self.perm_get,
+            'post': self.perm_post,
+            'delete': self.perm_delete,
+            'annotation': self.annotation}
