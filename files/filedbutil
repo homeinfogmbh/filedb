@@ -48,6 +48,14 @@ def ask(question, default=False, yes=('yes', 'y'), ignorecase=True):
     return reply in yes
 
 
+def user_abort(*msgs):
+    """Indicate abort by user."""
+
+    print()
+    print(*msgs, file=stderr)
+    return 1
+
+
 def clean(files, interactive=True, simulate=True):
     """Clean filedb records."""
 
@@ -90,16 +98,14 @@ def make_clean(files, interactive, simulate):
         try:
             sleep(3)
         except KeyboardInterrupt:
-            print()
-            print('Aborted by user.', file=stderr)
-            return 1
+            return user_abort('Aborted by user.')
 
     try:
         if not interactive or ask(
                 CLEANUP_QUESTION, yes=('YES',), ignorecase=False):
             clean(files, interactive=interactive, simulate=simulate)
     except KeyboardInterrupt:
-        print('Aborted by user.', file=stderr)
+        return user_abort('Aborted by user.')
 
 
 def main(options):
