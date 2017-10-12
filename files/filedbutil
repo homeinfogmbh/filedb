@@ -21,7 +21,6 @@ from filedb.orm import File
 from openimmodb import Anhang
 from strflib import Shell
 from his.mods.fs.orm import Inode
-from immobit
 
 
 REFERENCES = (Anhang, Inode)
