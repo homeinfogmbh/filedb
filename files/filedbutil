@@ -73,7 +73,7 @@ def clean(files, interactive=True, simulate=True):
 
             if not interactive or ask(question):
                 if not simulate:
-                    file.remove()
+                    file.remove(force=True)
 
                 deleted += 1
                 print('DELETED {} ({}).'.format(file.id, file.sha256sum))
