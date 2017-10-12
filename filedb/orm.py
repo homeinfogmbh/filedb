@@ -14,7 +14,7 @@ from mimeutil import mimetype
 
 from filedb.config import CONFIG
 
-__all__ = ['ChecksumMismatch', 'File', 'Permission']
+__all__ = ['ChecksumMismatch', 'NoDataError', 'File', 'Permission']
 
 
 LOGGER = Logger('filedb')
@@ -26,27 +26,22 @@ class ChecksumMismatch(Exception):
     """Indicates inconsistency between file checksums."""
 
     def __init__(self, expected_value, actual_value):
-        """Sets expected and actual value"""
+        """Sets expected and actual value."""
         super().__init__(expected_value, actual_value)
-        self._expected_value = expected_value
-        self._actual_value = actual_value
-
-    @property
-    def expected_value(self):
-        """Returns the expected value."""
-        return self._expected_value
-
-    @property
-    def actual_value(self):
-        """Returns the actual value."""
-        return self._actual_value
+        self.expected_value = expected_value
+        self.actual_value = actual_value
 
     def __str__(self):
         """Converts to a string."""
-        return '\n'.join([
-            'File checksums do not match',
-            ' '.join(['    expected:', str(self.expected_value)]),
-            ' '.join(['    actual:  ', str(self.actual_value)])])
+        return 'File checksums do not match.\nExpected {}, but got {}.'.format(
+            self.expected_value, self.actual_value)
+
+
+class NoDataError(ValueError):
+    """Indicates that no data was provided while creating a new file."""
+
+    def __init__(self):
+        super().__init__('Refusing to create empty file.')
 
 
 class FileDBModel(Model):
@@ -75,60 +70,43 @@ class File(FileDBModel):
     last_access = DateTimeField(null=True, default=None)
     accessed = IntegerField(default=0)
 
-    @classmethod
-    def add(cls, fileobj):
-        """Add a new file uniquely."""
-        try:
-            # Assume file path first
-            with open(fileobj, 'rb') as file:
-                data = file.read()
-        except FileNotFoundError:
-            try:
-                # Assume file handler
-                data = fileobj.read()
-            except AttributeError:
-                # Finally assume bytes
-                data = fileobj
-        except (OSError, TypeError, ValueError):
-            data = fileobj
-
-        if data:
-            mime = mimetype(data)
-            sha256sum = sha256(data).hexdigest()
-
-            try:
-                record = cls.get(cls.sha256sum == sha256sum)
-            except DoesNotExist:
-                return cls._add(data, sha256sum, mime)
-            else:
-                if not record.exists:
-                    # Fix missing files on file system
-                    with open(str(record.path), 'wb') as file:
-                        file.write(data)
-
-                record.hardlinks += 1
-                record.save()
-                return record
-        else:
-            raise ValueError('Refusing to create empty file')
+    def __str__(self):
+        """Converts the file to a string."""
+        return str(self.sha256sum)
 
     @classmethod
-    def _add(cls, data, checksum, mime):
-        """Forcibly adds a file."""
+    def add(cls, data, sha256sum=None):
+        """Forcibly adds a file from bytes."""
         record = cls()
-        record.mimetype = mime
-        record.sha256sum = checksum
+        record.mimetype = mimetype(data)
+        record.sha256sum = sha256sum or sha256(data).hexdigest()
         record.created = datetime.now()
         record.size = len(data)
         record.hardlinks = 1
-        path = record.path
-
-        with open(str(path), 'wb') as file:
-            file.write(data)
-
-        path.chmod(MODE)
+        record.write(data)
         record.save()
         return record
+
+    @classmethod
+    def from_bytes(cls, data):
+        """Creates a unique file record from the provided bytes."""
+        if not data:
+            raise NoDataError()
+
+        sha256sum = sha256(data).hexdigest()
+
+        try:
+            record = cls.get(cls.sha256sum == sha256sum)
+        except DoesNotExist:
+            return cls.add(data, sha256sum=sha256sum)
+        else:
+            # Fix missing files on file system.
+            if not record.exists:
+                record.write(data)
+
+            record.hardlinks += 1
+            record.save()
+            return record
 
     @classmethod
     def purge(cls, orphans):
@@ -137,37 +115,30 @@ class File(FileDBModel):
             try:
                 record = cls.get(cls.id == orphan)
             except DoesNotExist:
-                LOGGER.warning('No such record: {}'.format(orphan))
+                LOGGER.warning('No such record: {}.'.format(orphan))
             else:
                 # Forcibly remove record
                 record.unlink(force=True)
-                LOGGER.info('Unlinked: {}'.format(record.id))
+                LOGGER.success('Unlinked: {}.'.format(record.id))
 
     @classmethod
     def update_hardlinks(cls, references):
         """Fixes the hard links to the given reference dictionary."""
-        for ident in references:
+        for ident, hardlinks in references.items():
             try:
                 record = cls.get(cls.id == ident)
             except DoesNotExist:
-                LOGGER.warning('No such record: {}'.format(ident))
+                LOGGER.warning('No such record: {}.'.format(ident))
             else:
-                record.hardlinks = references[ident]
+                record.hardlinks = hardlinks
                 record.save()
-                LOGGER.info(
-                    'Set hard links of #{record.id} to '
-                    '{record.hardlinks}'.format(record=record))
+                LOGGER.success('Set hardlinks of #{.id} to {}'.format(
+                    record, hardlinks))
 
     @property
     def path(self):
         """Returns the file's path."""
         return BASEDIR.joinpath(self.sha256sum)
-
-    def touch(self):
-        """Update access counters."""
-        self.accessed += 1
-        self.last_access = datetime.now()
-        self.save()
 
     @property
     def data(self):
@@ -202,12 +173,25 @@ class File(FileDBModel):
         else:
             return True
 
+    def touch(self):
+        """Update access counters."""
+        self.accessed += 1
+        self.last_access = datetime.now()
+        self.save()
+
     def read(self, count=None):
         """Delegate reading to file handler."""
         self.touch()
 
-        with open(str(self.path), 'rb') as file:
+        with self.path.open('rb') as file:
             return file.read(count)
+
+    def write(self, data):
+        """Writes data."""
+        with self.path.open('wb') as file:
+            file.write(data)
+
+        self.path.chmod(MODE)
 
     def unlink(self, force=False):
         """Unlinks / removes the file."""
@@ -235,10 +219,6 @@ class File(FileDBModel):
     def remove(self, force=False):
         """Alias to unlink."""
         return self.unlink(force=force)
-
-    def __str__(self):
-        """Converts the file to a string."""
-        return str(self.sha256sum)
 
 
 class Permission(FileDBModel):

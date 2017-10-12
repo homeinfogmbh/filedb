@@ -5,7 +5,7 @@ from peewee import DoesNotExist
 from wsgilib import OK, Error, Binary, InternalServerError, ResourceHandler
 
 from filedb.config import TIME_FORMAT
-from filedb.orm import File, ChecksumMismatch, Permission
+from filedb.orm import ChecksumMismatch, NoDataError, File, Permission
 
 __all__ = ['FileDB']
 
@@ -107,7 +107,9 @@ class FileDB(ResourceHandler):
         """Stores a (new) file."""
         if self.perm.perm_post:
             try:
-                record = File.add(self.data.bytes)
+                record = File.from_bytes(self.data.bytes)
+            except NoDataError:
+                raise Error('No data provided.') from None
             except Exception as error:
                 raise InternalServerError(str(error)) from None
             else:
