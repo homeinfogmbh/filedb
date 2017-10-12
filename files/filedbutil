@@ -95,10 +95,15 @@ def make_clean(files, interactive, simulate):
             'THIS IS SERIOUS!', template=HOT_TEMPLATE, animation=HOT_ANIM)
 
     with animation:
+        aborted = False
+
         try:
             sleep(3)
         except KeyboardInterrupt:
-            return user_abort('Aborted by user.')
+            aborted = True
+
+    if aborted:
+        return user_abort('Aborted by user.')
 
     try:
         if not interactive or ask(
