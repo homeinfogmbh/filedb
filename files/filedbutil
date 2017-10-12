@@ -81,6 +81,8 @@ def clean(files, interactive=True, simulate=True):
                 kept += 1
                 print('Keeping {}.'.format(file.id))
         else:
+            kept += 1
+
             if file.hardlinks != hardlinks:
                 old_hardlinks, file.hardlinks = file.hardlinks, hardlinks
 
