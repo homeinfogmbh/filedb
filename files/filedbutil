@@ -13,18 +13,26 @@ Options:
 """
 from itertools import chain
 from json import dumps
+from sys import exit as exit_, stderr
+from time import sleep
 
+from fancylog import TTYAnimation
 from filedb.orm import File
-from openimmodb3 import Immobilie, Attachment
 from openimmodb import Anhang
+from strflib import Shell
 from his.mods.fs.orm import Inode
 
 
-REFERENCES = (Immobilie, Attachment, Anhang, Inode)
+REFERENCES = (Anhang, Inode)
+CLEANUP_QUESTION = 'Type YES if you really want to clean up: '
+SIM_TEMPLATE = '{message}{animation}'
+SIM_ANIM = ('', '.', '..', '...', ' ..', '  .')
+HOT_TEMPLATE = '{animation} {message} {animation}'
+HOT_ANIM = ('', Shell.bold(Shell.red('⚠')))
 
 
 def ask(question, default=False, yes=('yes', 'y'), ignorecase=True):
-    """Ask a question and return accordingly"""
+    """Ask a question and return accordingly."""
 
     try:
         reply = input(question)
@@ -41,7 +49,8 @@ def ask(question, default=False, yes=('yes', 'y'), ignorecase=True):
 
 
 def clean(files, interactive=True, simulate=True):
-    """Clean filedb records"""
+    """Clean filedb records."""
+
     for file in File:
         try:
             hardlinks = files[file.id]
@@ -67,6 +76,29 @@ def clean(files, interactive=True, simulate=True):
                     file.id, old_hardlinks, hardlinks))
 
 
+def make_clean(files, interactive, simulate):
+    """Invoke cleaning securely."""
+
+    if simulate:
+        animation = TTYAnimation(
+            'Just simulating', template=SIM_TEMPLATE, anmation=SIM_ANIM)
+    else:
+        animation = TTYAnimation(
+            'THIS IS SERIOUS!', template=HOT_TEMPLATE, anmation=HOT_ANIM)
+
+    with animation:
+        try:
+            sleep(3)
+        except KeyboardInterrupt:
+            print()
+            print('Aborted by user.', file=stderr)
+            return 1
+
+    if not interactive or ask(
+            CLEANUP_QUESTION, yes=('YES',), ignorecase=False):
+        clean(files, interactive=interactive, simulate=simulate)
+
+
 def main(options):
     """Runs the file DB utility."""
 
@@ -74,28 +106,24 @@ def main(options):
     simulate = not options['--this-is-not-a-drill']
     files = {}
 
-    for rr in chain(*REFERENCES):
+    for record in chain(*REFERENCES):
         try:
-            files[rr.file] += 1
+            files[record.file] += 1
         except KeyError:
-            files[rr.file] = 1
+            files[record.file] = 1
 
     if options['refs']:
         print('Current references:')
 
         for ref in REFERENCES:
-            print('   ', ref)
+            print(' ' * 3, ref)
     elif options['list']:
         print(dumps(files, indent=2))
     elif options['clean']:
-        if simulate:
-            print('Just simulating...')
-            sleep(3)
+        # Notify user about simulation.
+        return make_clean(files, interactive, simulate)
 
-        question = 'Type YES if you really want to clean up: '
-
-        if not interactive or ask(question, yes=('YES',), ignorecase=False):
-            clean(files, interactive=interactive, simulate=simulate)
+    return 0
 
 
 
