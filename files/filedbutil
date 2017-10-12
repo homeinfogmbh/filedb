@@ -25,9 +25,9 @@ from his.mods.fs.orm import Inode
 
 REFERENCES = (Anhang, Inode)
 CLEANUP_QUESTION = 'Type YES if you really want to clean up: '
-SIM_TEMPLATE = '{message}{animation}'
+SIM_TEMPLATE = '{}{}'
 SIM_ANIM = ('   ', '.  ', '.. ', '...', ' ..', '  .')
-HOT_TEMPLATE = '{animation} {message} {animation}'
+HOT_TEMPLATE = '{1} {0} {1}'
 HOT_ANIM = (' ', Shell.bold(Shell.red('⚠')))
 
 
