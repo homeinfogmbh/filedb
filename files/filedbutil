@@ -21,6 +21,7 @@ from filedb.orm import File
 from openimmodb import Anhang
 from strflib import Shell
 from his.mods.fs.orm import Inode
+from immobit
 
 
 REFERENCES = (Anhang, Inode)
@@ -59,7 +60,12 @@ def user_abort(*msgs):
 def clean(files, interactive=True, simulate=True):
     """Clean filedb records."""
 
-    for file in File:
+    count = 0
+    deleted = 0
+    kept = 0
+    updated = 0
+
+    for count, file in enumerate(File, start=1):
         try:
             hardlinks = files[file.id]
         except KeyError:
@@ -70,8 +76,10 @@ def clean(files, interactive=True, simulate=True):
                 if not simulate:
                     file.remove()
 
+                deleted += 1
                 print('DELETED {} ({}).'.format(file.id, file.sha256sum))
             else:
+                kept += 1
                 print('Keeping {}.'.format(file.id))
         else:
             if file.hardlinks != hardlinks:
@@ -80,8 +88,13 @@ def clean(files, interactive=True, simulate=True):
                 if not simulate:
                     file.save()
 
+                updated += 1
                 print('Updated hardlinks of <{}> from {} to {}.'.format(
                     file.id, old_hardlinks, hardlinks))
+
+    print('Processed {} files.'.format(count), file=stderr)
+    print('Deleted: {}, kept: {}, updated: {}.'.format(
+        deleted, kept, updated), file=stderr)
 
 
 def make_clean(files, interactive, simulate):
