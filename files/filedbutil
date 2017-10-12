@@ -81,10 +81,10 @@ def make_clean(files, interactive, simulate):
 
     if simulate:
         animation = TTYAnimation(
-            'Just simulating', template=SIM_TEMPLATE, anmation=SIM_ANIM)
+            'Just simulating', template=SIM_TEMPLATE, animation=SIM_ANIM)
     else:
         animation = TTYAnimation(
-            'THIS IS SERIOUS!', template=HOT_TEMPLATE, anmation=HOT_ANIM)
+            'THIS IS SERIOUS!', template=HOT_TEMPLATE, animation=HOT_ANIM)
 
     with animation:
         try:
