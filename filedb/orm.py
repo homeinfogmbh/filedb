@@ -179,12 +179,12 @@ class File(FileDBModel):
         self.last_access = datetime.now()
         self.save()
 
-    def read(self, count=None):
+    def read(self):
         """Delegate reading to file handler."""
         self.touch()
 
         with self.path.open('rb') as file:
-            return file.read(count)
+            return file.read()
 
     def write(self, data):
         """Writes data."""
