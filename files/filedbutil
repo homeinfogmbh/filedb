@@ -11,6 +11,7 @@ Options:
     --this-is-not-a-drill  Do not just simulate cleanup.
     --help                 Show this page.
 """
+from collections import defaultdict
 from itertools import chain
 from json import dumps
 from sys import exit as exit_, stderr
@@ -65,9 +66,9 @@ def clean(files, interactive=True, simulate=True):
     updated = 0
 
     for count, file in enumerate(File, start=1):
-        try:
-            hardlinks = files[file.id]
-        except KeyError:
+        hardlinks = files[file.id]
+
+        if hardlinks == 0:
             print('File <{}> is not used.'.format(file.id))
             question = 'Delete file {}? '.format(file.id)
 
@@ -132,13 +133,10 @@ def main(options):
 
     interactive = not options['--non-interactive']
     simulate = not options['--this-is-not-a-drill']
-    files = {}
+    files = defaultdict(int)
 
     for record in chain(*REFERENCES):
-        try:
-            files[record.file] += 1
-        except KeyError:
-            files[record.file] = 1
+        files[record.file] += 1
 
     if options['refs']:
         print('Current references:')
