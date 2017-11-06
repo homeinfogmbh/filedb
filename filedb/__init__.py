@@ -1,6 +1,6 @@
 """HOMEINFO's file database"""
 
+from filedb.client import FileError, add, get, delete
 from filedb.extra import FileProperty
-from filedb.http import FileError, FileClient
 
-__all__ = ['FileError', 'FileClient', 'FileProperty']
+__all__ = ['FileError', 'add', 'get', 'delete', 'FileProperty']

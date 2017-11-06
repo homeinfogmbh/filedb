@@ -1,11 +1,8 @@
 """Extra hacks."""
 
-from filedb.http import FileClient
+from filedb.client import add, get, delete
 
 __all__ = ['FileProperty']
-
-
-PARAMETER_ERROR = ValueError('Need either file_client or key.')
 
 
 class FileProperty:
@@ -15,22 +12,11 @@ class FileProperty:
     DB model for reasons of consistency.
     """
 
-    def __init__(self, integer_field, file_client=None,
-                 key=None, ensure_consistency=True):
+    def __init__(self, integer_field, ensure_consistency=True):
         """Sets the referenced integer field, file client or key
         and optional flag whether to ensure database consistency.
         """
         self.integer_field = integer_field
-
-        if file_client is not None and key is not None:
-            raise PARAMETER_ERROR
-        elif file_client is not None:
-            self.file_client = file_client
-        elif key is not None:
-            self.file_client = FileClient(key)
-        else:
-            raise PARAMETER_ERROR
-
         self.ensure_consistency = ensure_consistency
 
     def __get__(self, instance, instance_type=None):
@@ -41,7 +27,7 @@ class FileProperty:
             value = getattr(instance, self.integer_field.name)
 
             if value is not None:
-                return self.file_client.get(value)
+                return get(value)
         else:
             return self.integer_field
 
@@ -53,12 +39,12 @@ class FileProperty:
             previous_value = getattr(instance, self.integer_field.name)
 
             if data is not None:
-                new_value = self.file_client.add(data)
+                new_value = add(data)
             else:
                 new_value = None
 
             if previous_value is not None:
-                self.file_client.delete(previous_value)
+                delete(previous_value)
 
             setattr(instance, self.integer_field.name, new_value)
 

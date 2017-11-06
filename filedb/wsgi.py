@@ -5,7 +5,7 @@ from peewee import DoesNotExist
 from wsgilib import OK, Error, Binary, InternalServerError, ResourceHandler
 
 from filedb.config import TIME_FORMAT
-from filedb.orm import ChecksumMismatch, NoDataError, File, Permission
+from filedb.orm import ChecksumMismatch, NoDataError, File
 
 __all__ = ['FileDB']
 
@@ -47,19 +47,6 @@ class FileDB(ResourceHandler):
             raise Error('Missing identifier.', status=400) from None
 
     @property
-    def perm(self):
-        """Authenticate an access."""
-        try:
-            key = self.query['key']
-        except KeyError:
-            raise Error('Not authenticated.', status=401) from None
-        else:
-            try:
-                return Permission.get(Permission.key == key)
-            except DoesNotExist:
-                raise Error('Not authorized.', status=403) from None
-
-    @property
     def file(self):
         """Returns the respective file."""
         try:
@@ -85,60 +72,48 @@ class FileDB(ResourceHandler):
 
     def get(self):
         """Gets a file by its ID."""
-        if self.perm.perm_get:
-            metadata = self.query.get('metadata')
+        metadata = self.query.get('metadata')
 
-            if metadata is None:
-                return self._get_data()
+        if metadata is None:
+            return self._get_data()
 
-            if metadata == 'exists':
-                try:
-                    File.get(File.id == self.ident)
-                except DoesNotExist:
-                    return Error(str(False), status=404)
-                else:
-                    return OK(str(True))
+        if metadata == 'exists':
+            try:
+                File.get(File.id == self.ident)
+            except DoesNotExist:
+                return Error(str(False), status=404)
+            else:
+                return OK(str(True))
 
-            return get_metadata(self.file, metadata)
-
-        raise Error('Not authorized.', status=403) from None
+        return get_metadata(self.file, metadata)
 
     def post(self):
         """Stores a (new) file."""
-        if self.perm.perm_post:
-            try:
-                record = File.from_bytes(self.data.bytes)
-            except NoDataError:
-                raise Error('No data provided.') from None
-            except Exception as error:
-                raise InternalServerError(str(error)) from None
-            else:
-                return OK(str(record.id))
-
-        raise Error('Not authorized.', status=403) from None
+        try:
+            record = File.from_bytes(self.data.bytes)
+        except NoDataError:
+            raise Error('No data provided.') from None
+        except Exception as error:
+            raise InternalServerError(str(error)) from None
+        else:
+            return OK(str(record.id))
 
     def put(self):
         """Increases the reference counter."""
-        if self.perm.perm_post:  # Use POST permissions for now
-            try:
-                file = File.get(File.id == self.ident)
-            except DoesNotExist:
-                raise Error('No such file.', status=404) from None
-            else:
-                file.hardlinks += 1
-                file.save()
-                return OK()
-
-        raise Error('Not authorized.', status=403) from None
+        try:
+            file = File.get(File.id == self.ident)
+        except DoesNotExist:
+            raise Error('No such file.', status=404) from None
+        else:
+            file.hardlinks += 1
+            file.save()
+            return OK()
 
     def delete(self):
         """Deletes a file."""
-        if self.perm.perm_delete:
-            try:
-                file = File.get(File.id == self.ident)
-            except DoesNotExist:
-                raise Error('No such file.', status=400) from None
-            else:
-                return OK(str(file.unlink()))
-
-        raise Error('Not authorized.', status=400) from None
+        try:
+            file = File.get(File.id == self.ident)
+        except DoesNotExist:
+            raise Error('No such file.', status=400) from None
+        else:
+            return OK(str(file.unlink()))

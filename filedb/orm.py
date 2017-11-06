@@ -5,8 +5,8 @@ from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
 
-from peewee import Model, CharField, IntegerField, DoesNotExist,\
-    DateTimeField, PrimaryKeyField, BooleanField
+from peewee import Model, CharField, IntegerField, DoesNotExist, \
+    DateTimeField, PrimaryKeyField
 
 from peeweeplus import MySQLDatabase
 from fancylog import Logger
@@ -14,7 +14,7 @@ from mimeutil import mimetype
 
 from filedb.config import CONFIG
 
-__all__ = ['ChecksumMismatch', 'NoDataError', 'File', 'Permission']
+__all__ = ['ChecksumMismatch', 'NoDataError', 'File']
 
 
 LOGGER = Logger('filedb')
@@ -219,29 +219,3 @@ class File(FileDBModel):
     def remove(self, force=False):
         """Alias to unlink."""
         return self.unlink(force=force)
-
-
-class Permission(FileDBModel):
-    """Keys allowed to access the filedb."""
-
-    key = CharField(36)
-    perm_get = BooleanField(db_column='get')
-    perm_post = BooleanField(db_column='post')
-    perm_delete = BooleanField(db_column='delete')
-    annotation = CharField(255)
-
-    def __str__(self):
-        """Returns a human readable representation."""
-        return '{}: {}{}{} ({})'.format(
-            self.key, 'g' if self.perm_get else '-',
-            'p' if self.perm_post else '-', 'd' if self.perm_delete else '-',
-            self.annotation)
-
-    def to_dict(self):
-        """Returns a JSON compliant dictionary."""
-        return {
-            'key': self.key,
-            'get': self.perm_get,
-            'post': self.perm_post,
-            'delete': self.perm_delete,
-            'annotation': self.annotation}
