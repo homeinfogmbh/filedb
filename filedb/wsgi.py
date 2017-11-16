@@ -2,12 +2,13 @@
 
 from peewee import DoesNotExist
 
-from wsgilib import OK, Error, Binary, InternalServerError, ResourceHandler
+from wsgilib import OK, Error, Binary, InternalServerError, RestHandler, \
+    Router, Route
 
 from filedb.config import TIME_FORMAT
 from filedb.orm import ChecksumMismatch, NoDataError, File
 
-__all__ = ['FileDB']
+__all__ = ['ROUTER']
 
 
 METADATA = {
@@ -33,18 +34,13 @@ def get_metadata(file, metadata):
         return OK(function(file))
 
 
-class FileDB(ResourceHandler):
+class FileDB(RestHandler):
     """Handles requests for the FileDBController."""
 
     @property
     def ident(self):
         """Returns the appropriate file identifier."""
-        try:
-            return int(self.resource)
-        except ValueError:
-            raise Error('Invalid identifier.', status=400) from None
-        except TypeError:
-            raise Error('Missing identifier.', status=400) from None
+        return self.vars['id']
 
     @property
     def file(self):
@@ -117,3 +113,8 @@ class FileDB(ResourceHandler):
             raise Error('No such file.', status=400) from None
         else:
             return OK(str(file.unlink()))
+
+
+ROUTER = Router(
+    (Route('/filedb/[id:int]'), FileDB)
+)

@@ -2,6 +2,6 @@
 """WSGI main program for HOMIE Controller"""
 
 from wsgilib import RestApp
-from filedb.wsgi import FileDB
+from filedb.wsgi import ROUTER
 
-application = RestApp({'filedb': FileDB})
+application = RestApp(ROUTER)
