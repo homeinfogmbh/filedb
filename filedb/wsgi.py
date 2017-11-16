@@ -2,14 +2,15 @@
 
 from peewee import DoesNotExist
 
-from wsgilib import OK, Error, Binary, InternalServerError, RestHandler, \
-    Router, Route
+from wsgilib import OK, Error, Binary, InternalServerError, RestHandler, Router
 
 from filedb.config import TIME_FORMAT
 from filedb.orm import ChecksumMismatch, NoDataError, File
 
 __all__ = ['ROUTER']
 
+
+ROUTER = Router()
 
 METADATA = {
     'sha256sum': lambda file: file.sha256sum,
@@ -34,6 +35,7 @@ def get_metadata(file, metadata):
         return OK(function(file))
 
 
+@ROUTER.route('/filedb/[id:int]')
 class FileDB(RestHandler):
     """Handles requests for the FileDBController."""
 
@@ -114,8 +116,3 @@ class FileDB(RestHandler):
             raise Error('No such file.', status=400) from None
         else:
             return OK(str(file.unlink()))
-
-
-ROUTER = Router(
-    (Route('/filedb/[id:int]'), FileDB)
-)
