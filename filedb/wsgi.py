@@ -40,6 +40,7 @@ class FileDB(RestHandler):
     @property
     def ident(self):
         """Returns the appropriate file identifier."""
+        print(self.vars)
         return self.vars['id']
 
     @property
