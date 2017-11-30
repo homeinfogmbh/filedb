@@ -2,16 +2,15 @@
 
 from peewee import DoesNotExist
 
-from wsgilib import OK, Error, Binary, InternalServerError, RestHandler, Router
+from flask import request, make_response, Flask
 
-from filedb.config import TIME_FORMAT
 from filedb.orm import ChecksumMismatch, NoDataError, File
+from filedb.config import CONFIG
 
-__all__ = ['ROUTER']
+__all__ = ['APPLICATION']
 
 
-ROUTER = Router()
-
+APPLICATION = Flask('filedb')
 METADATA = {
     'sha256sum': lambda file: file.sha256sum,
     'size': lambda file: str(file.size),
@@ -20,8 +19,9 @@ METADATA = {
     'accessed': lambda file: str(file.accessed),
     'last_access': (
         lambda file: 'never' if file.last_access is None
-        else file.last_access.strftime(TIME_FORMAT)),
-    'created': lambda file: file.created.strftime(TIME_FORMAT)}
+        else file.last_access.strftime(CONFIG['data']['time_format'])),
+    'created': lambda file: file.created.strftime(
+        CONFIG['data']['time_format'])}
 
 
 def get_metadata(file, metadata):
@@ -30,89 +30,88 @@ def get_metadata(file, metadata):
     try:
         function = METADATA[metadata]
     except KeyError:
-        raise Error('Unknown metadata.', status=400) from None
-    else:
-        return OK(function(file))
+        return ('Unknown metadata.', 400)
+
+    return str(function(file))
 
 
-@ROUTER.route('/filedb/[id:int]')
-class FileDB(RestHandler):
-    """Handles requests for the FileDBController."""
-
-    @property
-    def ident(self):
-        """Returns the appropriate file identifier."""
-        print(self.vars)
-        return self.vars['id']
-
-    @property
-    def file(self):
-        """Returns the respective file."""
-        try:
-            return File.get(File.id == self.ident)
-        except DoesNotExist:
-            raise Error('No such file', status=404) from None
-
-    def _get_data(self):
-        """Returns actual file data."""
-        try:
-            if self.query.get('nocheck'):
-                data = self.file.read()
-            else:
-                data = self.file.data
-        except FileNotFoundError:
-            raise Error('File not found.', status=500) from None
-        except PermissionError:
-            raise Error('Cannot read file.', status=500) from None
-        except ChecksumMismatch:
-            raise Error('Corrupted file.', status=500) from None
+def get_data(file):
+    """Returns actual file data."""
+    try:
+        if request.args.get('nocheck'):
+            data = file.read()
         else:
-            return Binary(data)
+            data = file.data
+    except FileNotFoundError:
+        return ('File not found.', 500)
+    except PermissionError:
+        return ('Cannot read file.', 500)
+    except ChecksumMismatch:
+        return ('Corrupted file.', 500)
 
-    def get(self):
-        """Gets a file by its ID."""
-        metadata = self.query.get('metadata')
+    response = make_response(data)
+    response.headers['Content-Type'] = file.mimetype
+    return response
 
-        if metadata is None:
-            return self._get_data()
 
+@APPLICATION.route('/<ident:int>', methods=['GET'])
+def get_file(ident):
+    """Gets the respective file."""
+
+    metadata = request.args.get('metadata')
+
+    try:
+        file = File.get(File.id == ident)
+    except DoesNotExist:
         if metadata == 'exists':
-            try:
-                File.get(File.id == self.ident)
-            except DoesNotExist:
-                return Error(str(False), status=404)
-            else:
-                return OK(str(True))
+            return (str(False), 404)
 
-        return get_metadata(self.file, metadata)
+        return ('No such file.', 400)
+    else:
+        if metadata == 'exists':
+            return str(True)
 
-    def post(self):
-        """Stores a (new) file."""
-        try:
-            record = File.from_bytes(self.data.bytes)
-        except NoDataError:
-            raise Error('No data provided.') from None
-        except Exception as error:
-            raise InternalServerError(str(error)) from None
-        else:
-            return OK(str(record.id))
+    if metadata is None:
+        return get_data(file)
 
-    def put(self):
-        """Increases the reference counter."""
-        try:
-            file = File.get(File.id == self.ident)
-        except DoesNotExist:
-            raise Error('No such file.', status=404) from None
-        else:
-            file.hardlinks += 1
-            file.save()
-            return OK()
+    return get_metadata(file, metadata)
 
-    def delete(self):
-        """Deletes a file."""
-        try:
-            file = File.get(File.id == self.ident)
-        except DoesNotExist:
-            raise Error('No such file.', status=400) from None
-        else:
-            return OK(str(file.unlink()))
+
+@APPLICATION.route('/<ident:int>', methods=['DELETE'])
+def delete_file(ident):
+    """Deletes trhe respective file."""
+
+    try:
+        file = File.get(File.id == ident)
+    except DoesNotExist:
+        return ('No such file.', 400)
+
+    return str(file.unlink())
+
+
+@APPLICATION.route('/<ident:int>', methods=['PUT'])
+def touch_file(ident):
+    """Increases the reference counter."""
+
+    try:
+        file = File.get(File.id == ident)
+    except DoesNotExist:
+        return ('No such file.', 404)
+
+    file.hardlinks += 1
+    file.save()
+    return 'Hardlinks increased.'
+
+
+@APPLICATION.route('/', methods=['POST'])
+def add_file():
+    """Adds a new file."""
+
+    try:
+        record = File.from_bytes(request.get_data())
+    except NoDataError:
+        return ('No data provided.', 400)
+    except Exception as error:
+        return (str(error), 500)
+
+    return str(record.id)

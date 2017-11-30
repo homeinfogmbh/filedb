@@ -6,7 +6,7 @@ from os.path import join
 
 from requests import post, get as get_, put as put_, delete as delete_
 
-from filedb.config import CONFIG, TIME_FORMAT
+from filedb.config import CONFIG
 
 __all__ = [
     'BASE_URL',
@@ -26,7 +26,8 @@ __all__ = [
     'created']
 
 
-BASE_URL = CONFIG['www']['BASE_URL']
+BASE_URL = 'http://{}:{}/'.format(
+    CONFIG['wsgi']['host'], CONFIG['wsgi']['port'])
 
 
 class FileError(Exception):
@@ -135,7 +136,7 @@ def accessed(ident):
     return int(get_metadata(ident, 'accessed'))
 
 
-def last_access(ident, time_format=TIME_FORMAT):
+def last_access(ident, time_format=CONFIG['data']['time_format']):
     """Gets the last access datetime of the file."""
 
     last_access_ = get_metadata(ident, 'last_access')
@@ -146,7 +147,7 @@ def last_access(ident, time_format=TIME_FORMAT):
     return datetime.strptime(last_access_, time_format)
 
 
-def created(ident, time_format=TIME_FORMAT):
+def created(ident, time_format=CONFIG['data']['time_format']):
     """Gets the datetime of the file's creation."""
 
     return datetime.strptime(

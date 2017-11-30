@@ -10,9 +10,6 @@ setup(
     maintainer='Richard Neumann',
     maintainer_email='r.neumann@homeinfo.de',
     packages=['filedb'],
-    scripts=['files/filedbutil'],
-    data_files=[
-        ('/usr/local/bin', ['files/filedbutil']),
-        ('/etc/uwsgi/apps-available', ['files/filedb.ini']),
-        ('/usr/share/filedb', ['files/filedb.wsgi'])],
+    scripts=['files/filedbd', 'files/filedbutil'],
+    data_files=[('/usr/lib/systemd/system', ['files/filedb.service'])],
     description='A file database.')
