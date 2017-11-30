@@ -54,7 +54,7 @@ def get_data(file):
     return response
 
 
-@APPLICATION.route('/<ident:int>', methods=['GET'])
+@APPLICATION.route('/<int:ident>', methods=['GET'])
 def get_file(ident):
     """Gets the respective file."""
 
@@ -77,7 +77,7 @@ def get_file(ident):
     return get_metadata(file, metadata)
 
 
-@APPLICATION.route('/<ident:int>', methods=['DELETE'])
+@APPLICATION.route('/<int:ident>', methods=['DELETE'])
 def delete_file(ident):
     """Deletes trhe respective file."""
 
@@ -89,7 +89,7 @@ def delete_file(ident):
     return str(file.unlink())
 
 
-@APPLICATION.route('/<ident:int>', methods=['PUT'])
+@APPLICATION.route('/<int:ident>', methods=['PUT'])
 def touch_file(ident):
     """Increases the reference counter."""
 
