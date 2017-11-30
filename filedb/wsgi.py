@@ -66,7 +66,7 @@ def get_file(ident):
         if metadata == 'exists':
             return (str(False), 404)
 
-        return ('No such file.', 400)
+        return ('No such file.', 404)
     else:
         if metadata == 'exists':
             return str(True)
