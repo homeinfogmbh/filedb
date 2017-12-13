@@ -10,12 +10,9 @@ class FileProperty:
     access for peewee.Model ORM models.
     """
 
-    def __init__(self, integer_field, ensure_consistency=True):
-        """Sets the referenced integer field, file client or key
-        and optional flag whether to ensure database consistency.
-        """
+    def __init__(self, integer_field):
+        """Sets the referenced integer field."""
         self.integer_field = integer_field
-        self.ensure_consistency = ensure_consistency
 
     def __get__(self, instance, instance_type=None):
         """Returns file data from filedb using
@@ -47,6 +44,4 @@ class FileProperty:
                 delete(old_id)
 
             setattr(instance, self.integer_field.name, new_id)
-
-            if self.ensure_consistency:
-                instance.save()
+            instance.save(only=[self.integer_field])
