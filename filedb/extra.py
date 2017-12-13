@@ -1,15 +1,27 @@
 """Extra hacks."""
 
+from peewee import IntegerField
+
 from filedb.client import add, get, delete
 
-__all__ = ['FileProperty']
+__all__ = ['FileField', 'FileProperty']
+
+
+class FileField(IntegerField):
+    """Wraps an integer field to store a file."""
+
+    def db_value(self, value):
+        """Converts bytes to database value."""
+        return add(value)
+
+    def python_value(self, value):
+        """Converts database value to python."""
+        return get(value)
 
 
 class FileProperty:
-    """File property.
-
-    Setting to file properties will save the
-    DB model for reasons of consistency.
+    """A class to enable propertiy-like file
+    access for peewee.Model ORM models.
     """
 
     def __init__(self, integer_field, ensure_consistency=True):
@@ -24,29 +36,31 @@ class FileProperty:
         file_client and value from inter_field.
         """
         if instance is not None:
-            value = getattr(instance, self.integer_field.name)
+            file_id = getattr(instance, self.integer_field.name)
 
-            if value is not None:
-                return get(value)
-        else:
-            return self.integer_field
+            if file_id is not None:
+                return get(file_id)
+
+            return None
+
+        return self
 
     def __set__(self, instance, data):
         """Stores file data within filedb using
         file_client and value from inter_field.
         """
         if instance is not None:
-            previous_value = getattr(instance, self.integer_field.name)
+            old_id = getattr(instance, self.integer_field.name)
 
             if data is not None:
-                new_value = add(data)
+                new_id = add(data)
             else:
-                new_value = None
+                new_id = None
 
-            if previous_value is not None:
-                delete(previous_value)
+            if old_id is not None:
+                delete(old_id)
 
-            setattr(instance, self.integer_field.name, new_value)
+            setattr(instance, self.integer_field.name, new_id)
 
             if self.ensure_consistency:
                 instance.save()
