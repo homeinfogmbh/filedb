@@ -1,22 +1,8 @@
 """Extra hacks."""
 
-from peewee import IntegerField
-
 from filedb.client import add, get, delete
 
-__all__ = ['FileField', 'FileProperty']
-
-
-class FileField(IntegerField):
-    """Wraps an integer field to store a file."""
-
-    def db_value(self, value):
-        """Converts bytes to database value."""
-        return add(value)
-
-    def python_value(self, value):
-        """Converts database value to python."""
-        return get(value)
+__all__ = ['FileProperty']
 
 
 class FileProperty:
