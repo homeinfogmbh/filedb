@@ -48,7 +48,7 @@ def add(data):
         if result.status_code == 200:
             return int(result.text)
 
-        raise FileError(result)
+        raise FileError(result.text)
 
     raise FileError('Refusing to add empty file.')
 
