@@ -1,7 +1,5 @@
 [Unit]
 Description=File DB
-After=network.target mysql.service
-Requires=mysql.service
 
 [Service]
 User=filedb
@@ -9,4 +7,4 @@ Group=filedb
 ExecStart=/usr/local/bin/filedbd
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=wsgi-services.target
