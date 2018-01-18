@@ -1,5 +1,6 @@
 [Unit]
 Description=File DB
+PartOf=wsgi-services.target
 
 [Service]
 User=filedb
