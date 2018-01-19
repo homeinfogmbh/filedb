@@ -32,15 +32,14 @@ class FileProperty:
         """Stores file data within filedb using
         file_client and value from inter_field.
         """
-        if instance is not None:
-            old_id = getattr(instance, self.integer_field.name)
+        old_id = getattr(instance, self.integer_field.name)
 
-            if data is not None:
-                new_id = add(data)
-            else:
-                new_id = None
+        if data is not None:
+            new_id = add(data)
+        else:
+            new_id = None
 
-            if old_id is not None:
-                delete(old_id)
+        if old_id is not None:
+            delete(old_id)
 
-            setattr(instance, self.integer_field.name, new_id)
+        setattr(instance, self.integer_field.name, new_id)
