@@ -20,6 +20,7 @@ class FileProperty:
         """
         if instance is not None:
             file_id = getattr(instance, self.integer_field.name)
+            print('Got file id:', file_id, flush=True)
 
             if file_id is not None:
                 return get(file_id)
@@ -34,14 +35,27 @@ class FileProperty:
         """
         if instance is not None:
             old_id = getattr(instance, self.integer_field.name)
+            print('Got old id:', old_id, flush=True)
 
             if data is not None:
+                print('Adding data.', flush=True)
                 new_id = add(data)
             else:
+                print('Not adding data.', flush=True)
                 new_id = None
 
-            if old_id is not None:
-                delete(old_id)
+            print('New ID:', new_id, flush=True)
 
+            if old_id is not None:
+                print('Deleting old file.', flush=True)
+                delete(old_id)
+                print('Deleted old file.', flush=True)
+
+
+            print('Setting new value:', instance, self.integer_field.name,
+                  new_id, flush=True)
             setattr(instance, self.integer_field.name, new_id)
+            print('New value set.', flush=True)
+            print('Saving instance.', flush=True)
             instance.save(only=[self.integer_field])
+            print('Instance saved.', flush=True)
