@@ -1,7 +1,5 @@
 """Web service for REST-based access."""
 
-from peewee import DoesNotExist
-
 from flask import request, make_response, Flask
 
 from filedb.orm import ChecksumMismatch, NoDataError, File
@@ -62,7 +60,7 @@ def get_file(ident):
 
     try:
         file = File.get(File.id == ident)
-    except DoesNotExist:
+    except File.DoesNotExist:
         if metadata == 'exists':
             return (str(False), 404)
 
@@ -83,7 +81,7 @@ def delete_file(ident):
 
     try:
         file = File.get(File.id == ident)
-    except DoesNotExist:
+    except File.DoesNotExist:
         return ('No such file.', 400)
 
     return str(file.unlink())
@@ -95,7 +93,7 @@ def touch_file(ident):
 
     try:
         file = File.get(File.id == ident)
-    except DoesNotExist:
+    except File.DoesNotExist:
         return ('No such file.', 404)
 
     file.hardlinks += 1

@@ -5,8 +5,8 @@ from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
 
-from peewee import Model, CharField, IntegerField, DoesNotExist, \
-    DateTimeField, PrimaryKeyField
+from peewee import Model, CharField, IntegerField, DateTimeField, \
+    PrimaryKeyField
 
 from peeweeplus import MySQLDatabase
 from fancylog import Logger
@@ -97,16 +97,16 @@ class File(FileDBModel):
 
         try:
             record = cls.get(cls.sha256sum == sha256sum)
-        except DoesNotExist:
+        except cls.DoesNotExist:
             return cls.add(data, sha256sum=sha256sum)
-        else:
-            # Fix missing files on file system.
-            if not record.exists:
-                record.write(data)
 
-            record.hardlinks += 1
-            record.save()
-            return record
+        # Fix missing files on file system.
+        if not record.exists:
+            record.write(data)
+
+        record.hardlinks += 1
+        record.save()
+        return record
 
     @classmethod
     def purge(cls, orphans):
@@ -114,7 +114,7 @@ class File(FileDBModel):
         for orphan in orphans:
             try:
                 record = cls.get(cls.id == orphan)
-            except DoesNotExist:
+            except cls.DoesNotExist:
                 LOGGER.warning('No such record: {}.'.format(orphan))
             else:
                 # Forcibly remove record
@@ -127,7 +127,7 @@ class File(FileDBModel):
         for ident, hardlinks in references.items():
             try:
                 record = cls.get(cls.id == ident)
-            except DoesNotExist:
+            except cls.DoesNotExist:
                 LOGGER.warning('No such record: {}.'.format(ident))
             else:
                 record.hardlinks = hardlinks
