@@ -17,19 +17,21 @@ from json import dumps
 from sys import exit as exit_, stderr
 from time import sleep
 
+from blessings import Terminal
+
 from fancylog import TTYAnimation
 from filedb.orm import File
 from openimmodb import Anhang
-from strflib import Shell
 from his.mods.fs.orm import Inode
 
 
+TERMINAL = Terminal()
 REFERENCES = (Anhang, Inode)
 CLEANUP_QUESTION = 'Type YES if you really want to clean up: '
 SIM_TEMPLATE = '{}{}'
 SIM_ANIM = ('   ', '.  ', '.. ', '...', ' ..', '  .')
 HOT_TEMPLATE = '{1} {0} {1}'
-HOT_ANIM = (' ', Shell.bold(Shell.red('⚠')))
+HOT_ANIM = (' ', TERMINAL.bold(TERMINAL.red('⚠')))
 
 
 def ask(question, default=False, yes=('yes', 'y'), ignorecase=True):
