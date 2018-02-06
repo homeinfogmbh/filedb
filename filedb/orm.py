@@ -5,8 +5,8 @@ from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
 
-from peewee import Model, CharField, IntegerField, DateTimeField, \
-    PrimaryKeyField
+from peewee import Model, PrimaryKeyField, CharField, BigIntegerField, \
+    IntegerField, DateTimeField
 
 from peeweeplus import MySQLDatabase
 from fancylog import Logger
@@ -64,7 +64,7 @@ class File(FileDBModel):
 
     mimetype = CharField(255)
     sha256sum = CharField(64)
-    size = IntegerField()   # File size in bytes.
+    size = BigIntegerField()   # File size in bytes.
     hardlinks = IntegerField()
     created = DateTimeField()
     last_access = DateTimeField(null=True, default=None)
