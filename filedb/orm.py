@@ -48,6 +48,7 @@ class FileDBModel(Model):
     """A basic model for the file database."""
 
     class Meta:
+        """Database and schema configuration."""
         database = MySQLDatabase(
             'filedb',
             host=CONFIG['db']['host'],
