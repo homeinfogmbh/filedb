@@ -1,9 +1,0 @@
-#! /usr/bin/env python3
-"""File database daemon."""
-
-
-from filedb.config import CONFIG
-from filedb.wsgi import APPLICATION
-
-
-APPLICATION.run(host=CONFIG['wsgi']['host'], port=int(CONFIG['wsgi']['port']))

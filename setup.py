@@ -10,6 +10,5 @@ setup(
     maintainer='Richard Neumann',
     maintainer_email='r.neumann@homeinfo.de',
     packages=['filedb'],
-    scripts=['files/filedbd', 'files/filedbutil'],
-    data_files=[('/usr/lib/systemd/system', ['files/filedb.service'])],
+    scripts=['files/filedbutil'],
     description='A file database.')
