@@ -27,7 +27,7 @@ __all__ = [
 
 
 BASE_URL = 'http://{}:{}/'.format(
-    CONFIG['wsgi']['host'], CONFIG['wsgi']['port'])
+    CONFIG['http']['host'], CONFIG['http']['port'])
 
 
 class FileError(Exception):
