@@ -9,7 +9,6 @@ from peewee import Model, PrimaryKeyField, CharField, BigIntegerField, \
     IntegerField, DateTimeField
 
 from peeweeplus import MySQLDatabase
-from fancylog import Logger
 from mimeutil import mimetype
 
 from filedb.config import CONFIG
@@ -17,7 +16,6 @@ from filedb.config import CONFIG
 __all__ = ['ChecksumMismatch', 'NoDataError', 'File']
 
 
-LOGGER = Logger('filedb')
 BASEDIR = Path(CONFIG['fs']['BASE_DIR'])
 MODE = int(CONFIG['fs']['mode'], 8)
 
@@ -116,11 +114,9 @@ class File(FileDBModel):
             try:
                 record = cls.get(cls.id == orphan)
             except cls.DoesNotExist:
-                LOGGER.warning('No such record: {}.'.format(orphan))
-            else:
-                # Forcibly remove record
-                record.unlink(force=True)
-                LOGGER.success('Unlinked: {}.'.format(record.id))
+                continue
+
+            record.unlink(force=True)
 
     @classmethod
     def update_hardlinks(cls, references):
@@ -129,12 +125,10 @@ class File(FileDBModel):
             try:
                 record = cls.get(cls.id == ident)
             except cls.DoesNotExist:
-                LOGGER.warning('No such record: {}.'.format(ident))
-            else:
-                record.hardlinks = hardlinks
-                record.save()
-                LOGGER.success('Set hardlinks of #{.id} to {}'.format(
-                    record, hardlinks))
+                continue
+
+            record.hardlinks = hardlinks
+            record.save()
 
     @property
     def path(self):
@@ -202,14 +196,6 @@ class File(FileDBModel):
             try:
                 self.path.unlink()
             except FileNotFoundError:
-                LOGGER.error(
-                    'Could not delete non-existing file: "{}".'.format(
-                        self.path))
-                return False
-            except PermissionError:
-                LOGGER.error(
-                    'Could not delete file "{}" due to insufficient '
-                    'permissions'.format(self.path))
                 return False
 
             return self.delete_instance()
