@@ -28,6 +28,7 @@ __all__ = [
 
 BASE_URL = 'http://{}:{}/'.format(
     CONFIG['http']['host'], CONFIG['http']['port'])
+_TIME_FORMAT = CONFIG['data']['time_format']
 
 
 class FileError(Exception):
@@ -136,7 +137,7 @@ def accessed(ident):
     return int(get_metadata(ident, 'accessed'))
 
 
-def last_access(ident, time_format=CONFIG['data']['time_format']):
+def last_access(ident, time_format=_TIME_FORMAT):
     """Gets the last access datetime of the file."""
 
     last_access_ = get_metadata(ident, 'last_access')
@@ -147,7 +148,7 @@ def last_access(ident, time_format=CONFIG['data']['time_format']):
     return datetime.strptime(last_access_, time_format)
 
 
-def created(ident, time_format=CONFIG['data']['time_format']):
+def created(ident, time_format=_TIME_FORMAT):
     """Gets the datetime of the file's creation."""
 
     return datetime.strptime(
