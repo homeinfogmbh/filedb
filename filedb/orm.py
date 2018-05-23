@@ -16,6 +16,7 @@ from filedb.config import CONFIG
 __all__ = ['ChecksumMismatch', 'NoDataError', 'File']
 
 
+DATABASE = MySQLDatabase.from_config(CONFIG['db'])
 BASEDIR = Path(CONFIG['fs']['BASE_DIR'])
 MODE = int(CONFIG['fs']['mode'], 8)
 
@@ -47,12 +48,7 @@ class FileDBModel(Model):
 
     class Meta:
         """Database and schema configuration."""
-        database = MySQLDatabase(
-            'filedb',
-            host=CONFIG['db']['host'],
-            user=CONFIG['db']['user'],
-            passwd=CONFIG['db']['passwd'],
-            closing=True)
+        database = DATABASE
         schema = database.database
 
     id = PrimaryKeyField()
