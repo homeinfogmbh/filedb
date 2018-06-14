@@ -26,8 +26,10 @@ __all__ = [
     'created']
 
 
-BASE_URL = 'http://{}:{}/'.format(
-    CONFIG['http']['host'], CONFIG['http']['port'])
+BASE_URL = 'http://{}:{}{}'.format(
+    CONFIG['http']['host'],
+    CONFIG['http']['port'],
+    CONFIG['http'].get('path', '/'))
 _TIME_FORMAT = CONFIG['data']['time_format']
 
 
