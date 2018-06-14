@@ -2,7 +2,6 @@
 
 from contextlib import suppress
 from datetime import datetime
-from os.path import join
 
 from requests import post, get as get_, put as put_, delete as delete_
 
@@ -40,11 +39,19 @@ class FileError(Exception):
         self.result = result
 
 
+def _get_url(path=''):
+    """Joins the respective path to the base URL."""
+
+    base_url = BASE_URL.rstrip('/')
+    path = str(path).strip('/')
+    return '/'.join((base_url, path))
+
+
 def add(data):
     """Adds a file."""
 
     if data:
-        result = post(BASE_URL, data=data)
+        result = post(_get_url(), data=data)
 
         if result.status_code == 200:
             return int(result.text)
@@ -58,7 +65,7 @@ def get(ident, nocheck=False):
     """Gets a file."""
 
     params = {'nocheck': True} if nocheck else None
-    result = get_(join(BASE_URL, str(ident)), params=params)
+    result = get_(_get_url(ident), params=params)
 
     if result.status_code == 200:
         return result.content
@@ -70,7 +77,7 @@ def put(ident, nocheck=False):
     """Increases reference counter."""
 
     params = {'nocheck': True} if nocheck else None
-    result = put_(join(BASE_URL, str(ident)), params=params)
+    result = put_(_get_url(ident), params=params)
 
     if result.status_code == 200:
         return result.content
@@ -81,14 +88,14 @@ def put(ident, nocheck=False):
 def delete(ident):
     """Deletes a file."""
 
-    result = delete_(join(BASE_URL, str(ident)))
+    result = delete_(_get_url(ident))
     return result.status_code == 200
 
 
 def get_metadata(ident, metadata, return_values=None):
     """Gets metadata."""
 
-    result = get_(join(BASE_URL, str(ident)), params={'metadata': metadata})
+    result = get_(_get_url(ident), params={'metadata': metadata})
 
     if return_values:
         with suppress(KeyError):

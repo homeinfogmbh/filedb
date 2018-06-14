@@ -25,14 +25,8 @@ METADATA = {
 def _path(node):
     """Returns a joint path."""
 
-    if PATH.endswith('/'):
-        path = PATH[:-1]
-    else:
-        path = PATH
-
-    if node.startswith('/'):
-        node = node[1:]
-
+    path = PATH.rstrip('/')
+    node = node.lstrip('/')
     return '/'.join((path, node))
 
 
