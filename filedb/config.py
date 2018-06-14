@@ -6,4 +6,7 @@ __all__ = ['CONFIG', 'PATH']
 
 
 CONFIG = INIParser('/etc/filedb.conf', interpolation=None)
-PATH = CONFIG['http'].get('path', '/')
+PATH = CONFIG['http'].get('path', '')
+
+if not PATH.endswith('/'):
+    PATH += '/'
