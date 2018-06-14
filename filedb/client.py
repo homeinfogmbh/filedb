@@ -6,7 +6,7 @@ from os.path import join
 
 from requests import post, get as get_, put as put_, delete as delete_
 
-from filedb.config import CONFIG
+from filedb.config import CONFIG, PATH
 
 __all__ = [
     'BASE_URL',
@@ -27,9 +27,7 @@ __all__ = [
 
 
 BASE_URL = 'http://{}:{}{}'.format(
-    CONFIG['http']['host'],
-    CONFIG['http']['port'],
-    CONFIG['http'].get('path', '/'))
+    CONFIG['http']['host'], CONFIG['http']['port'], PATH)
 _TIME_FORMAT = CONFIG['data']['time_format']
 
 

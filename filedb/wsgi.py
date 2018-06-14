@@ -3,7 +3,7 @@
 from flask import request, make_response, Flask
 
 from filedb.orm import ChecksumMismatch, NoDataError, File
-from filedb.config import CONFIG
+from filedb.config import CONFIG, PATH
 
 __all__ = ['APPLICATION']
 
@@ -20,6 +20,20 @@ METADATA = {
         else file.last_access.strftime(CONFIG['data']['time_format'])),
     'created': lambda file: file.created.strftime(
         CONFIG['data']['time_format'])}
+
+
+def _path(node):
+    """Returns a joint path."""
+
+    if PATH.endswith('/'):
+        path = PATH[:-1]
+    else:
+        path = PATH
+
+    if node.startswith('/'):
+        node = node[1:]
+
+    return '/'.join((path, node))
 
 
 def get_metadata(file, metadata):
@@ -52,7 +66,7 @@ def get_data(file):
     return response
 
 
-@APPLICATION.route('/<int:ident>', methods=['GET'])
+@APPLICATION.route(_path('/<int:ident>'), methods=['GET'])
 def get_file(ident):
     """Gets the respective file."""
 
@@ -75,7 +89,7 @@ def get_file(ident):
     return get_metadata(file, metadata)
 
 
-@APPLICATION.route('/<int:ident>', methods=['DELETE'])
+@APPLICATION.route(_path('/<int:ident>'), methods=['DELETE'])
 def delete_file(ident):
     """Deletes trhe respective file."""
 
@@ -87,7 +101,7 @@ def delete_file(ident):
     return str(file.unlink())
 
 
-@APPLICATION.route('/<int:ident>', methods=['PUT'])
+@APPLICATION.route(_path('/<int:ident>'), methods=['PUT'])
 def touch_file(ident):
     """Increases the reference counter."""
 
@@ -101,7 +115,7 @@ def touch_file(ident):
     return 'Hardlinks increased.'
 
 
-@APPLICATION.route('/', methods=['POST'])
+@APPLICATION.route(_path('/'), methods=['POST'])
 def add_file():
     """Adds a new file."""
 

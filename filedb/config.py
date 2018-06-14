@@ -2,7 +2,8 @@
 
 from configlib import INIParser
 
-__all__ = ['CONFIG']
+__all__ = ['CONFIG', 'PATH']
 
 
 CONFIG = INIParser('/etc/filedb.conf', interpolation=None)
+PATH = CONFIG['http'].get('path', '/')
