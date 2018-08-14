@@ -5,8 +5,8 @@ from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
 
-from peewee import Model, PrimaryKeyField, CharField, FixedCharField, \
-    BigIntegerField, IntegerField, DateTimeField
+from peewee import Model, CharField, FixedCharField, BigIntegerField, \
+    IntegerField, DateTimeField
 
 from peeweeplus import MySQLDatabase
 from mimeutil import mimetype
@@ -50,8 +50,6 @@ class FileDBModel(Model):
         """Database and schema configuration."""
         database = DATABASE
         schema = database.database
-
-    id = PrimaryKeyField()
 
 
 class File(FileDBModel):
