@@ -30,7 +30,7 @@ BASE_URL = 'http://{}:{}{}'.format(
     CONFIG['http']['host'], CONFIG['http']['port'], PATH)
 _TIME_FORMAT = CONFIG['data']['time_format']
 # Disable urllib3 verbose logging.
-getLogger("urllib3").setLevel(WARNING)
+getLogger('requests').setLevel(WARNING)
 
 
 class FileError(Exception):
