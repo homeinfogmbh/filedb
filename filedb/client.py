@@ -2,6 +2,7 @@
 
 from contextlib import suppress
 from datetime import datetime
+from logging import WARNING, getLogger
 
 from requests import post, get as get_, put as put_, delete as delete_
 
@@ -28,6 +29,8 @@ __all__ = [
 BASE_URL = 'http://{}:{}{}'.format(
     CONFIG['http']['host'], CONFIG['http']['port'], PATH)
 _TIME_FORMAT = CONFIG['data']['time_format']
+# Disable urllib3 verbose logging.
+getLogger("urllib3").setLevel(WARNING)
 
 
 class FileError(Exception):
