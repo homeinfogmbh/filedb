@@ -140,7 +140,12 @@ def main(options):
     files = defaultdict(int)
 
     for record in chain(*REFERENCES):
-        files[record.file] += 1
+        try:
+            file = record.file
+        except AttributeError:
+            file = record._file
+
+        files[file] += 1
 
     if options['refs']:
         print('Current references:')
