@@ -19,7 +19,7 @@ from time import sleep
 
 from blessings import Terminal
 
-from fancylog import TTYAnimator
+from fancylog import DEFAULT_ANIMATION, TTYAnimation, TTYAnimator
 from filedb.orm import File
 from openimmodb import Anhang
 from hisfs.orm import File as HisfsFile
@@ -29,9 +29,11 @@ TERMINAL = Terminal()
 REFERENCES = ((Anhang, 'file'), (HisfsFile, '_file'))
 CLEANUP_QUESTION = 'Type YES if you really want to clean up: '
 SIM_TEMPLATE = '{}{}'
-SIM_ANIM = ('   ', '.  ', '.. ', '...', ' ..', '  .')
+SIM_STAGES = ('   ', '.  ', '.. ', '...', ' ..', '  .')
+SIM_ANIM = TTYAnimation(SIM_TEMPLATE, SIM_STAGES, DEFAULT_ANIMATION.end)
 HOT_TEMPLATE = '{1} {0} {1}'
-HOT_ANIM = (' ', TERMINAL.bold(TERMINAL.red('⚠')))
+HOT_STAGES = (' ', TERMINAL.bold(TERMINAL.red('⚠')))
+HOT_ANIM = TTYAnimation(HOT_TEMPLATE, HOT_STAGES, DEFAULT_ANIMATION.end)
 
 
 def ask(question, default=False, yes=('yes', 'y'), ignorecase=True):
@@ -105,11 +107,9 @@ def make_clean(files, interactive, simulate):
     """Invoke cleaning securely."""
 
     if simulate:
-        animation = TTYAnimator(
-            'Just simulating', template=SIM_TEMPLATE, animation=SIM_ANIM)
+        animation = TTYAnimator('Just simulating', animation=SIM_ANIM)
     else:
-        animation = TTYAnimator(
-            'THIS IS SERIOUS!', template=HOT_TEMPLATE, animation=HOT_ANIM)
+        animation = TTYAnimator('THIS IS SERIOUS!', animation=HOT_ANIM)
 
     with animation:
         aborted = False
