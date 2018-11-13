@@ -23,6 +23,7 @@ from fancylog import DEFAULT_ANIMATION, TTYAnimation, TTYAnimator
 from filedb.orm import File
 
 from hinews.orm import Image as HinewsImage
+from his.orm import CustomerSettings as HisCustomerSettings
 from hisfs.orm import File as HisfsFile
 from openimmodb import Anhang as OpenimmodbAnhang
 
@@ -30,6 +31,7 @@ from openimmodb import Anhang as OpenimmodbAnhang
 TERMINAL = Terminal()
 REFERENCES = (
     (OpenimmodbAnhang, 'file'),
+    (HisCustomerSettings, '_file'),
     (HisfsFile, '_file'),
     (HinewsImage, '_file'))
 CLEANUP_QUESTION = 'Type YES if you really want to clean up: '
