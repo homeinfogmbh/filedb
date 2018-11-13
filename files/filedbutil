@@ -22,6 +22,7 @@ from blessings import Terminal
 from fancylog import DEFAULT_ANIMATION, TTYAnimation, TTYAnimator
 from filedb.orm import File
 
+# References.
 from hinews.orm import Image as HinewsImage
 from his.orm import CustomerSettings as HisCustomerSettings
 from hisfs.orm import File as HisfsFile
