@@ -32,7 +32,7 @@ TERMINAL = Terminal()
 REFERENCES = (
     (OpenimmodbAnhang, 'file'),
     (OpenimmodbKontakt, 'foto'),
-    (HisCustomerSettings, '_file'),
+    (HisCustomerSettings, '_logo'),
     (HisfsFile, '_file'),
     (HinewsImage, '_file'))
 CLEANUP_QUESTION = 'Type YES if you really want to clean up: '
