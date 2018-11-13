@@ -26,7 +26,7 @@ from hisfs.orm import File as HisfsFile
 
 
 TERMINAL = Terminal()
-REFERENCES = (Anhang, HisfsFile)
+REFERENCES = ((Anhang, 'file'), (HisfsFile, '_file'))
 CLEANUP_QUESTION = 'Type YES if you really want to clean up: '
 SIM_TEMPLATE = '{}{}'
 SIM_ANIM = ('   ', '.  ', '.. ', '...', ' ..', '  .')
@@ -139,13 +139,10 @@ def main(options):
     simulate = not options['--this-is-not-a-drill']
     files = defaultdict(int)
 
-    for record in chain(*REFERENCES):
-        try:
-            file = record.file
-        except AttributeError:
-            file = record._file
-
-        files[file] += 1
+    for model, attribute in REFERENCES:
+        for record in model:
+            file = getattr(record, attribute)
+            files[file] += 1
 
     if options['refs']:
         print('Current references:')
