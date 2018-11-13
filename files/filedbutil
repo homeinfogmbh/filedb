@@ -22,11 +22,11 @@ from blessings import Terminal
 from fancylog import TTYAnimator
 from filedb.orm import File
 from openimmodb import Anhang
-from hisfs.orm import Inode
+from hisfs.orm import File as HisfsFile
 
 
 TERMINAL = Terminal()
-REFERENCES = (Anhang, Inode)
+REFERENCES = (Anhang, HisfsFile)
 CLEANUP_QUESTION = 'Type YES if you really want to clean up: '
 SIM_TEMPLATE = '{}{}'
 SIM_ANIM = ('   ', '.  ', '.. ', '...', ' ..', '  .')
