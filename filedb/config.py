@@ -1,9 +1,11 @@
 """Configuration for HOMEINFO's global file database."""
 
-from configlib import INIParser
+from configparser import ConfigParser
+
 
 __all__ = ['CONFIG', 'PATH']
 
 
-CONFIG = INIParser('/etc/filedb.conf', interpolation=None)
+CONFIG = ConfigParser(interpolation=None)
+CONFIG.read('/usr/local/etc/filedb.conf')
 PATH = CONFIG['http'].get('path', '')
