@@ -108,8 +108,9 @@ def touch_file(ident):
 def add_file():
     """Adds a new file."""
 
+    stream = request.iter_content(chunk_size=CHUNK_SIZE)
+
     try:
-        stream = request.iter_content(chunk_size=CHUNK_SIZE)
         record = File.from_stream(stream)
     except Exception as error:  # pylint: disable=W0703
         return (str(error), 500)
