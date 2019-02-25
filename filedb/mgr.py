@@ -1,29 +1,15 @@
 """General file DB record and data management."""
 
+from filedb.exceptions import AmbiguousIdentError, NoIdentError
 from filedb.orm import File
 
-__all__ = [
-    'NoIdentError',
-    'AmbiguousIdentError',
-    'get_file',
-    'purge',
-    'untrack']
 
-
-class NoIdentError(Exception):
-    """Indicates a lack of identifier."""
-
-    pass
-
-
-class AmbiguousIdentError(Exception):
-    """Indicates ambiguous identifiers."""
-
-    pass
+__all__ = ['get_file', 'purge', 'untrack']
 
 
 def get_file(ident=None, checksum=None):
     """Gets a file by either identifier or checksum."""
+
     if ident is None and checksum is None:
         raise NoIdentError()
     elif ident is not None:
@@ -38,12 +24,11 @@ def purge(ident=None, checksum=None):
     """Purges a file from the database and server."""
 
     file = get_file(ident=ident, checksum=checksum)
-    file.path.unlink()
-    file.delete_record()
+    file.remove()
 
 
 def untrack(ident=None, checksum=None):
     """Removes a file from the database only."""
 
     file = get_file(ident=ident, checksum=checksum)
-    file.delete_record()
+    file.delete_instance()

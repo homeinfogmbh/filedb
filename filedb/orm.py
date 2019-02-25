@@ -1,5 +1,6 @@
 """Models for HOMEINFO's global file database."""
 
+from contextlib import suppress
 from datetime import datetime
 from functools import partial
 from hashlib import sha256
@@ -175,10 +176,11 @@ class File(FileDBModel):
         self.hardlinks += -1
 
         if not self.hardlinks or force:
-            try:
-                self.path.unlink()
-            except FileNotFoundError:
-                return False
+            with suppress(FileNotFoundError):
+                try:
+                    self.path.unlink()
+                except PermissionError:
+                    return False
 
             return self.delete_instance()
 

@@ -7,10 +7,11 @@ from logging import WARNING, getLogger
 from requests import post, get as get_, put as put_, delete as delete_
 
 from filedb.config import CONFIG, PATH
+from filedb.exceptions import FileError
+
 
 __all__ = [
     'BASE_URL',
-    'FileError',
     'add',
     'get',
     'stream',
@@ -32,15 +33,6 @@ BASE_URL = 'http://{}:{}{}'.format(
 _TIME_FORMAT = CONFIG['data']['time_format']
 # Disable urllib3 verbose logging.
 getLogger('requests').setLevel(WARNING)
-
-
-class FileError(Exception):
-    """Indicates errors while accessing files."""
-
-    def __init__(self, result):
-        """Sets the request result."""
-        super().__init__(result)
-        self.result = result
 
 
 def _get_url(path=''):
