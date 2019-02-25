@@ -1,9 +1,9 @@
 """Web service for REST-based access."""
 
-from flask import request, make_response, Flask
+from flask import request, Flask, Response
 
-from filedb.orm import ChecksumMismatch, NoDataError, File
-from filedb.config import CONFIG, PATH
+from filedb.orm import File
+from filedb.config import CONFIG, PATH, CHUNK_SIZE
 
 __all__ = ['APPLICATION']
 
@@ -43,21 +43,16 @@ def get_metadata(file, metadata):
 
 def get_data(file):
     """Returns actual file data."""
+
     try:
-        if request.args.get('nocheck'):
-            data = file.read()
-        else:
-            data = file.data
+        if not request.args.get('nocheck', False) and not file.consistent:
+            return ('Corrupted file.', 500)
+
+        return Response(file.stream(), mimetype=file.mimetype)
     except FileNotFoundError:
         return ('File not found.', 500)
     except PermissionError:
-        return ('Cannot read file.', 500)
-    except ChecksumMismatch:
-        return ('Corrupted file.', 500)
-
-    response = make_response(data)
-    response.headers['Content-Type'] = file.mimetype
-    return response
+        return ('Permission error.', 500)
 
 
 @APPLICATION.route(_path('/<int:ident>'), methods=['GET'])
@@ -114,10 +109,9 @@ def add_file():
     """Adds a new file."""
 
     try:
-        record = File.from_bytes(request.get_data())
-    except NoDataError:
-        return ('No data provided.', 400)
-    except Exception as error:
+        stream = request.iter_content(chunk_size=CHUNK_SIZE)
+        record = File.from_stream(stream)
+    except Exception as error:  # pylint: disable=W0703
         return (str(error), 500)
 
     return str(record.id)
