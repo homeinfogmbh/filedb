@@ -79,8 +79,8 @@ def stream(ident, nocheck=False, chunk_size=4096, decode_unicode=False):
         for chunk in result.iter_content(
                 chunk_size=chunk_size, decode_unicode=decode_unicode):
             yield chunk
-
-    raise FileError(result)
+    else:
+        raise FileError(result)
 
 
 def put(ident, nocheck=False):
