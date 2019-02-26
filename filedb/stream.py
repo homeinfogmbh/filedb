@@ -59,6 +59,12 @@ class NamedFileStream:  # pylint: disable=R0902
         for chunk in self.stream():
             yield chunk
 
+    def __str__(self):
+        """Returns a string representation."""
+        classname = type(self).__name__
+        attributes = ', '.join(self._slot_strings)
+        return '{}({})'.format(classname, attributes)
+
     @classmethod
     def from_bytes(cls, bytes_, name=None, *, chunk_size=CHUNK_SIZE):
         """Creates the file stream from bytes."""
@@ -79,6 +85,18 @@ class NamedFileStream:  # pylint: disable=R0902
         """Creates the file stream from a pathlib.Path."""
         return cls(partial(stream_path, path), stem=path.stem,
                    suffix=path.suffix, chunk_size=chunk_size)
+
+    @property
+    def _slot_values(self):
+        """Yields slot name / sloot value pairs."""
+        for slot in type(self).__slots__:
+            yield (slot, getattr(self, slot))
+
+    @property
+    def _slot_strings(self):
+        """Yields 'slot=<value>' strings."""
+        for slot, value in self._slot_values:
+            yield '{}={}'.format(slot, value)
 
     @property
     def name(self):
