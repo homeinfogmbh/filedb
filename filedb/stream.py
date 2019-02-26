@@ -108,7 +108,7 @@ class NamedFileStream:  # pylint: disable=R0902
     def name(self):
         """Returns the name."""
         if self._name is None:
-            return self.stem + self.suffix
+            self._name = self.stem + self.suffix
 
         return self._name
 
@@ -117,9 +117,9 @@ class NamedFileStream:  # pylint: disable=R0902
         """Returns the file stem."""
         if self._stem is None:
             if self._name is None:
-                return self.sha256sum
-
-            return Path(self._name).stem
+                self._stem = self.sha256sum
+            else:
+                self._stem = Path(self._name).stem
 
         return self._stem
 
@@ -128,9 +128,9 @@ class NamedFileStream:  # pylint: disable=R0902
         """Returns the file suffix aka. file extension."""
         if self._suffix is None:
             if self._name is None:
-                return guess_extension(self.mimetype)
-
-            return Path(self._name).suffix
+                self._suffix = guess_extension(self.mimetype)
+            else:
+                self._suffix = Path(self._name).suffix
 
         return self._suffix
 
@@ -139,7 +139,8 @@ class NamedFileStream:  # pylint: disable=R0902
         """Returns the MIME type."""
         if self._mimetype is None:
             for chunk in self.stream_func(chunk_size=CHUNK_SIZE):
-                return from_buffer(chunk, mime=True)
+                self._mimetype = from_buffer(chunk, mime=True)
+                break
 
         return self._mimetype
 
@@ -147,12 +148,10 @@ class NamedFileStream:  # pylint: disable=R0902
     def size(self):
         """Returns the file's size."""
         if self._size is None:
-            size = 0
+            self._size = 0
 
             for chunk in self:
-                size += len(chunk)
-
-            return size
+                self._size += len(chunk)
 
         return self._size
 
@@ -165,7 +164,7 @@ class NamedFileStream:  # pylint: disable=R0902
             for chunk in self:
                 sha256sum.update(chunk)
 
-            return sha256sum.hexdigest()
+            self._sha256sum = sha256sum.hexdigest()
 
         return self._sha256sum
 
