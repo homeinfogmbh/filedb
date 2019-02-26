@@ -10,6 +10,7 @@ from filedb.client import size
 from filedb.exceptions import FileError
 from filedb.extra import FileProperty
 from filedb.orm import File
+from filedb.stream import NamedFileStream
 
 
 __all__ = [
@@ -22,4 +23,5 @@ __all__ = [
     'mimetype',
     'size',
     'FileProperty',
-    'File']
+    'File',
+    'NamedFileStream']
