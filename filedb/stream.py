@@ -1,10 +1,11 @@
 """File streaming."""
 
 from functools import partial
+from gc import collect
 from hashlib import sha256
-from io import BytesIO
 from mimetypes import guess_extension
 from pathlib import Path
+from tempfile import TemporaryFile
 
 from magic import from_buffer   # pylint: disable=E0401
 
@@ -19,10 +20,15 @@ __all__ = ['stream_bytes', 'stream_path', 'NamedFileStream']
 def stream_bytes(bytes_, chunk_size=CHUNK_SIZE):
     """Streams bytes."""
 
-    file = BytesIO(bytes_)
+    with TemporaryFile(mode='w+b') as tmp:
+        tmp.write(bytes_)
+        tmp.flush()
+        tmp.seek(0)
+        bytes_ = None   # Remove name from bytes.
+        collect()       # Garbage collect bytes.
 
-    for chunk in iter(partial(file.read, chunk_size), b''):
-        yield chunk
+        for chunk in iter(partial(tmp.read, chunk_size), b''):
+            yield chunk
 
 
 def stream_path(path, chunk_size=CHUNK_SIZE):
