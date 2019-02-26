@@ -18,7 +18,7 @@ from peeweeplus import MySQLDatabase
 from mimeutil import mimetype, FileMetaData
 
 from filedb.config import CONFIG, CHUNK_SIZE
-from filedb.stream import NamedFileStream
+from filedb.streaming import NamedFileStream
 
 
 __all__ = ['File']
