@@ -39,6 +39,31 @@ def stream_path(path, chunk_size=CHUNK_SIZE):
             yield chunk
 
 
+class StreamReader:     # pylint: disable=R0903
+    """Makes streams readable."""
+
+    def __init__(self, stream):
+        """Sets the an iterator of the stream and a buffer."""
+        self.stream = iter(stream)
+        self.buffer = b''
+
+    def read(self, bufsize=None):
+        """Reads the bufsize from the stream."""
+        if bufsize is None:
+            return b''.join(self.stream)
+
+        buf, self.buffer = self.buffer, b''
+
+        while len(buf) < bufsize:
+            try:
+                buf += self.stream.next()
+            except StopIteration:
+                return buf
+
+        self.buffer = buf[bufsize:]
+        return buf[:bufsize]
+
+
 class NamedFileStream:  # pylint: disable=R0902
     """Represents a named file stream."""
 
@@ -174,3 +199,7 @@ class NamedFileStream:  # pylint: disable=R0902
 
         for chunk in self.stream_func(chunk_size=chunk_size):
             yield chunk
+
+    def open(self):
+        """Returns a stream reader."""
+        return StreamReader(self)
