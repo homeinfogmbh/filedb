@@ -18,6 +18,7 @@ from peeweeplus import MySQLDatabase
 from mimeutil import mimetype, FileMetaData
 
 from filedb.config import CONFIG, CHUNK_SIZE
+from filedb.stream import NamedFileStream
 
 
 __all__ = ['File']
@@ -193,8 +194,5 @@ class File(FileDBModel):
 
     def stream(self, chunk_size=CHUNK_SIZE):
         """Yields chunks of the specified size."""
-        with self.path.open('rb') as file:
-            for chunk in iter(partial(file.read, chunk_size), b''):
-                yield chunk
-
         self.touch()
+        return NamedFileStream.from_orm(self, chunk_size=chunk_size)
