@@ -9,8 +9,18 @@ from magic import from_buffer   # pylint: disable=E0401
 
 from mimeutil import FileMetaData
 
+from filedb.config import CHUNK_SIZE
+
 
 __all__ = ['NamedFileStream']
+
+
+def stream_path(path, chunk_size=CHUNK_SIZE):
+    """Stream func for the path."""
+
+    with path.open('rb') as file:
+        for chunk in iter(partial(file.read, chunk_size), b''):
+            yield chunk
 
 
 class NamedFileStream:
@@ -18,7 +28,7 @@ class NamedFileStream:
 
     def __init__(self, stream_func=None, stem=None, # pylint: disable=R0913
                  mimetype=None, size=None, sha256sum=None, suffix=None, *,
-                 chunk_size=4096):
+                 chunk_size=CHUNK_SIZE):
         """Sets name, streaming function callback,
         MIME type, size and streaming chunk size.
         """
@@ -36,7 +46,7 @@ class NamedFileStream:
             yield chunk
 
     @classmethod
-    def from_bytes(cls, bytes_, *, chunk_size=4096):
+    def from_bytes(cls, bytes_, *, chunk_size=CHUNK_SIZE):
         """Creates the file stream from bytes."""
         def stream_func(chunk_size=chunk_size):
             file = BytesIO(bytes_)
@@ -47,21 +57,17 @@ class NamedFileStream:
                    sha256sum=sha256sum, suffix=suffix, chunk_size=chunk_size)
 
     @classmethod
-    def from_file_model(cls, file, *, chunk_size=4096):
+    def from_orm(cls, file, *, chunk_size=CHUNK_SIZE):
         """Creates the file stream from a file ORM model."""
-        return cls(file.stream, mimetype=file.mimetype, size=file.size,
-                   sha256sum=file.sha256sum, chunk_size=chunk_size)
+        return cls(partial(stream_path, file.path), mimetype=file.mimetype,
+                   size=file.size, sha256sum=file.sha256sum,
+                   chunk_size=chunk_size)
 
     @classmethod
-    def from_path(cls, path, *, chunk_size=4096):
+    def from_path(cls, path, *, chunk_size=CHUNK_SIZE):
         """Creates the file stream from a pathlib.Path."""
-        def stream_func(chunk_size=chunk_size):
-            """Stream func for the path."""
-            with path.open('rb') as file:
-                yield from iter(partial(file.read, chunk_size), b'')
-
-        return cls(stream_func, stem=path.stem, suffix=path.suffix,
-                   chunk_size=chunk_size)
+        return cls(partial(stream_path, path), stem=path.stem,
+                   suffix=path.suffix, chunk_size=chunk_size)
 
     @property
     def stem(self):
@@ -75,7 +81,7 @@ class NamedFileStream:
     def mimetype(self):
         """Returns the MIME type."""
         if self._mimetype is None:
-            for chunk in self.stream_func(chunk_size=1024):
+            for chunk in self.stream_func(chunk_size=CHUNK_SIZE):
                 return from_buffer(chunk, mime=True)
 
         return self._mimetype
