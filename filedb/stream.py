@@ -12,7 +12,16 @@ from mimeutil import FileMetaData
 from filedb.config import CHUNK_SIZE
 
 
-__all__ = ['NamedFileStream']
+__all__ = ['stream_bytes', 'stream_path', 'NamedFileStream']
+
+
+def stream_bytes(bytes_, chunk_size=CHUNK_SIZE):
+    """Streams bytes."""
+
+    file = BytesIO(bytes_)
+
+    for chunk in iter(partial(file.read, chunk_size), b''):
+        yield chunk
 
 
 def stream_path(path, chunk_size=CHUNK_SIZE):
@@ -48,13 +57,10 @@ class NamedFileStream:
     @classmethod
     def from_bytes(cls, bytes_, *, chunk_size=CHUNK_SIZE):
         """Creates the file stream from bytes."""
-        def stream_func(chunk_size=chunk_size):
-            file = BytesIO(bytes_)
-            yield from iter(partial(file.read, chunk_size), b'')
-
         sha256sum, mimetype, suffix = FileMetaData.from_bytes(bytes_)
-        return cls(stream_func, mimetype=mimetype, size=len(bytes_),
-                   sha256sum=sha256sum, suffix=suffix, chunk_size=chunk_size)
+        return cls(partial(stream_bytes, bytes_), mimetype=mimetype,
+                   size=len(bytes_), sha256sum=sha256sum, suffix=suffix,
+                   chunk_size=chunk_size)
 
     @classmethod
     def from_orm(cls, file, *, chunk_size=CHUNK_SIZE):
