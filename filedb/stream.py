@@ -193,13 +193,14 @@ class NamedFileStream:  # pylint: disable=R0902
 
         return self._sha256sum
 
+    @property
+    def file(self):
+        """Returns a stream reader."""
+        return StreamReader(self)
+
     def stream(self, chunk_size=None):
         """Streams the bytes."""
         chunk_size = self.chunk_size if chunk_size is None else chunk_size
 
         for chunk in self.stream_func(chunk_size=chunk_size):
             yield chunk
-
-    def open(self):
-        """Returns a stream reader."""
-        return StreamReader(self)
