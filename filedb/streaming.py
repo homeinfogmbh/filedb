@@ -56,7 +56,7 @@ class StreamReader:     # pylint: disable=R0903
 
         while len(buf) < bufsize:
             try:
-                buf += self.stream.next()
+                buf += next(self.stream)
             except StopIteration:
                 return buf
 
