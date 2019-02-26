@@ -4,6 +4,7 @@ from functools import partial
 from hashlib import sha256
 from io import BytesIO
 from mimetypes import guess_extension
+from pathlib import Path
 
 from magic import from_buffer   # pylint: disable=E0401
 
@@ -32,21 +33,25 @@ def stream_path(path, chunk_size=CHUNK_SIZE):
             yield chunk
 
 
-class NamedFileStream:
+class NamedFileStream:  # pylint: disable=R0902
     """Represents a named file stream."""
 
-    def __init__(self, stream_func=None, stem=None, # pylint: disable=R0913
-                 mimetype=None, size=None, sha256sum=None, suffix=None, *,
-                 chunk_size=CHUNK_SIZE):
+    __slots__ = ('stream_func', '_name', '_stem', '_suffix', '_mimetype',
+                 '_size', '_sha256sum', 'chunk_size')
+
+    def __init__(self, stream_func=None, name=None, # pylint: disable=R0913
+                 stem=None, suffix=None, mimetype=None, size=None,
+                 sha256sum=None, *, chunk_size=CHUNK_SIZE):
         """Sets name, streaming function callback,
         MIME type, size and streaming chunk size.
         """
         self.stream_func = stream_func
+        self._name = name
         self._stem = stem
+        self._suffix = suffix
         self._mimetype = mimetype
         self._size = size
         self._sha256sum = sha256sum
-        self._suffix = suffix
         self.chunk_size = chunk_size
 
     def __iter__(self):
@@ -55,19 +60,19 @@ class NamedFileStream:
             yield chunk
 
     @classmethod
-    def from_bytes(cls, bytes_, *, chunk_size=CHUNK_SIZE):
+    def from_bytes(cls, bytes_, name=None, *, chunk_size=CHUNK_SIZE):
         """Creates the file stream from bytes."""
         sha256sum, mimetype, suffix = FileMetaData.from_bytes(bytes_)
-        return cls(partial(stream_bytes, bytes_), mimetype=mimetype,
-                   size=len(bytes_), sha256sum=sha256sum, suffix=suffix,
-                   chunk_size=chunk_size)
+        return cls(partial(stream_bytes, bytes_), name=name,
+                   mimetype=mimetype, size=len(bytes_), sha256sum=sha256sum,
+                   suffix=suffix, chunk_size=chunk_size)
 
     @classmethod
-    def from_orm(cls, file, *, chunk_size=CHUNK_SIZE):
+    def from_orm(cls, file, name=None, *, chunk_size=CHUNK_SIZE):
         """Creates the file stream from a file ORM model."""
-        return cls(partial(stream_path, file.path), mimetype=file.mimetype,
-                   size=file.size, sha256sum=file.sha256sum,
-                   chunk_size=chunk_size)
+        return cls(partial(stream_path, file.path), name=name,
+                   mimetype=file.mimetype, size=file.size,
+                   sha256sum=file.sha256sum, chunk_size=chunk_size)
 
     @classmethod
     def from_path(cls, path, *, chunk_size=CHUNK_SIZE):
@@ -76,12 +81,34 @@ class NamedFileStream:
                    suffix=path.suffix, chunk_size=chunk_size)
 
     @property
+    def name(self):
+        """Returns the name."""
+        if self._name is None:
+            return self.stem + self.suffix
+
+        return self._name
+
+    @property
     def stem(self):
         """Returns the file stem."""
         if self._stem is None:
-            return self.sha256sum
+            if self._name is None:
+                return self.sha256sum
+
+            return Path(self._name).stem
 
         return self._stem
+
+    @property
+    def suffix(self):
+        """Returns the file suffix aka. file extension."""
+        if self._suffix is None:
+            if self._name is None:
+                return guess_extension(self.mimetype)
+
+            return Path(self._name).suffix
+
+        return self._suffix
 
     @property
     def mimetype(self):
@@ -117,19 +144,6 @@ class NamedFileStream:
             return sha256sum.hexdigest()
 
         return self._sha256sum
-
-    @property
-    def suffix(self):
-        """Returns the file suffix aka. file extension."""
-        if self._suffix is None:
-            return guess_extension(self.mimetype)
-
-        return self._suffix
-
-    @property
-    def name(self):
-        """Returns the file name."""
-        return self.stem + self.suffix
 
     def stream(self, chunk_size=None):
         """Streams the bytes."""
