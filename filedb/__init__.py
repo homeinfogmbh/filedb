@@ -10,7 +10,7 @@ from filedb.client import size
 from filedb.exceptions import FileError
 from filedb.extra import FileProperty
 from filedb.orm import File
-from filedb.stream import NamedFileStream
+from filedb.streaming import NamedFileStream
 
 
 __all__ = [
