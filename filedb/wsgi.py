@@ -1,5 +1,7 @@
 """Web service for REST-based access."""
 
+from functools import partial
+
 from flask import request, Flask, Response
 
 from filedb.orm import File
@@ -108,7 +110,7 @@ def touch_file(ident):
 def add_file():
     """Adds a new file."""
 
-    stream = request.iter_content(chunk_size=CHUNK_SIZE)
+    stream = iter(partial(request.stream.read, CHUNK_SIZE), b'')
 
     try:
         record = File.from_stream(stream)
