@@ -15,7 +15,7 @@ from peewee import IntegerField
 from peewee import Model
 
 from peeweeplus import MySQLDatabase
-from mimeutil import mimetype, FileMetaData
+from mimeutil import mimetype
 
 from filedb.config import CONFIG, CHUNK_SIZE
 from filedb.streaming import NamedFileStream
@@ -54,47 +54,7 @@ class File(FileDBModel):
         return str(self.sha256sum)
 
     @classmethod
-    def add(cls, bytes_, metadata=None):
-        """Forcibly adds a file from bytes."""
-
-        if metadata is None:
-            metadata = FileMetaData.from_bytes(bytes_)
-
-        try:
-            record = cls.get(cls.sha256sum == metadata.sha256sum)
-        except cls.DoesNotExist:
-            record = cls()
-            record.sha256sum, record.mimetype, _ = metadata
-            record.size = len(bytes_)
-            record.bytes = bytes_
-            record.save()
-        else:
-            record.hardlinks += 1
-            record.save()
-
-        return record
-
-    @classmethod
-    def from_stream(cls, stream):
-        """Creates a file from the respective stream."""
-        sha256sum = sha256()
-
-        with TemporaryFile('w+b') as tmp:
-            for chunk in stream:
-                tmp.write(chunk)
-                sha256sum.update(chunk)
-
-            sha256sum = sha256sum.hexdigest()
-
-            try:
-                return cls.get(cls.sha256sum == sha256sum)
-            except cls.DoesNotExist:
-                tmp.flush()
-                tmp.seek(0)
-                return cls._from_temporary_file(tmp, sha256sum)
-
-    @classmethod
-    def _from_temporary_file(cls, temp, sha256sum, chunk_size=CHUNK_SIZE):
+    def _from_temporary_file(cls, temp, sha256sum, chunk_size):
         """Creates the file from a temporary file."""
         record = cls()
         record.sha256sum = sha256sum
@@ -110,6 +70,25 @@ class File(FileDBModel):
         record.mimetype = mimetype(str(path))
         record.save()
         return record
+
+    @classmethod
+    def from_stream(cls, stream, chunk_size=CHUNK_SIZE):
+        """Creates a file from the respective stream."""
+        sha256sum = sha256()
+
+        with TemporaryFile('w+b') as tmp:
+            for chunk in stream:
+                tmp.write(chunk)
+                sha256sum.update(chunk)
+
+            sha256sum = sha256sum.hexdigest()
+
+            try:
+                return cls.get(cls.sha256sum == sha256sum)
+            except cls.DoesNotExist:
+                tmp.flush()
+                tmp.seek(0)
+                return cls._from_temporary_file(tmp, sha256sum, chunk_size)
 
     @classmethod
     def purge(cls, orphans):
