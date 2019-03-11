@@ -68,7 +68,6 @@ class File(FileDBModel):
 
         record.size = size
         record.mimetype = mimetype(str(path))
-        record.save()
         return record
 
     @classmethod
@@ -84,11 +83,14 @@ class File(FileDBModel):
             sha256sum = sha256sum.hexdigest()
 
             try:
-                return cls.get(cls.sha256sum == sha256sum)
+                record = cls.get(cls.sha256sum == sha256sum)
             except cls.DoesNotExist:
                 tmp.flush()
                 tmp.seek(0)
                 return cls._from_temporary_file(tmp, sha256sum, chunk_size)
+
+            record.hardlinks += 1
+            return record
 
     @classmethod
     def purge(cls, orphans):

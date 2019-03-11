@@ -117,4 +117,5 @@ def add_file():
     except Exception as error:  # pylint: disable=W0703
         return (str(error), 500)
 
+    record.save()
     return str(record.id)
