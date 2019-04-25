@@ -7,7 +7,7 @@ from mimetypes import guess_extension
 from pathlib import Path
 from tempfile import TemporaryFile
 
-from magic import from_buffer   # pylint: disable=E0401
+from magic import detect_from_content   # pylint: disable=E0401
 
 from mimeutil import FileMetaData
 
@@ -164,7 +164,8 @@ class NamedFileStream:  # pylint: disable=R0902
         """Returns the MIME type."""
         if self._mimetype is None:
             for chunk in self.stream_func(chunk_size=CHUNK_SIZE):
-                self._mimetype = from_buffer(chunk, mime=True)
+                file_magic = detect_from_content(chunk)
+                self._mimetype = file_magic.mime_type
                 break
 
         return self._mimetype
