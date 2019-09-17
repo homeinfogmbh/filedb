@@ -112,7 +112,7 @@ def get_metadata(ident, *, return_values=None):
         with suppress(KeyError):
             return return_values[result.status_code]
     elif result.status_code == 200:
-        return result.json
+        return result.json()
 
     raise FileError(result)
 
