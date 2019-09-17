@@ -7,24 +7,13 @@ from flask import request, Flask, Response
 from wsgilib import JSON
 
 from filedb.orm import File
-from filedb.config import CONFIG, PATH, CHUNK_SIZE
+from filedb.config import PATH, CHUNK_SIZE
 
 
 __all__ = ['APPLICATION']
 
 
 APPLICATION = Flask('filedb')
-METADATA = {
-    'sha256sum': lambda file: file.sha256sum,
-    'size': lambda file: str(file.size),
-    'hardlinks': lambda file: str(file.hardlinks),
-    'mimetype': lambda file: file.mimetype,
-    'accessed': lambda file: str(file.accessed),
-    'last_access': (
-        lambda file: 'never' if file.last_access is None
-        else file.last_access.strftime(CONFIG['data']['time_format'])),
-    'created': lambda file: file.created.strftime(
-        CONFIG['data']['time_format'])}
 
 
 def _path(node):
@@ -33,17 +22,6 @@ def _path(node):
     path = PATH.rstrip('/')
     node = node.lstrip('/')
     return f'{path}/{node}'
-
-
-def get_metadata(file, metadata):
-    """Returns file meta data."""
-
-    try:
-        function = METADATA[metadata]
-    except KeyError:
-        return ('Unknown metadata.', 400)
-
-    return str(function(file))
 
 
 def get_data(file):
@@ -60,7 +38,7 @@ def get_data(file):
         return ('Permission error.', 500)
 
 
-def _get_file(ident):
+def get_file(ident):
     """Returns a file by the respective identifier."""
 
     if len(ident) == 64:    # Probably a SHA-256 sum.
@@ -70,26 +48,27 @@ def _get_file(ident):
 
 
 @APPLICATION.route(_path('/<ident>'), methods=['GET'])
-def get_file(ident):
+def get_bytes(ident):
     """Gets the respective file."""
 
-    metadata = request.args.get('metadata')
-
     try:
-        file = _get_file(ident)
+        file = get_file(ident)
     except File.DoesNotExist:
-        if metadata == 'exists':
-            return (str(False), 404)
-
         return ('No such file.', 404)
 
-    if metadata is None:
-        return get_data(file)
+    return get_data(file)
 
-    if metadata == 'exists':
-        return str(True)
 
-    return get_metadata(file, metadata)
+@APPLICATION.route(_path('/meta/<ident>'), methods=['GET'])
+def get_metadata(ident):
+    """Gets the respective file."""
+
+    try:
+        file = get_file(ident)
+    except File.DoesNotExist:
+        return ('No such file.', 404)
+
+    return JSON(file.to_json())
 
 
 @APPLICATION.route(_path('/<ident>'), methods=['DELETE'])
@@ -97,7 +76,7 @@ def delete_file(ident):
     """Deletes trhe respective file."""
 
     try:
-        file = _get_file(ident)
+        file = get_file(ident)
     except File.DoesNotExist:
         return ('No such file.', 400)
 
@@ -109,7 +88,7 @@ def touch_file(ident):
     """Increases the reference counter."""
 
     try:
-        file = _get_file(ident)
+        file = get_file(ident)
     except File.DoesNotExist:
         return ('No such file.', 404)
 

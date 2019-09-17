@@ -1,10 +1,11 @@
 """HTTP access to the filedb."""
 
 from contextlib import suppress
-from datetime import datetime
 from logging import WARNING, getLogger
 
 from requests import post, get as get_, put as put_, delete as delete_
+
+from timelib import strpdatetime
 
 from filedb.config import CONFIG, PATH
 from filedb.exceptions import FileError
@@ -28,9 +29,9 @@ __all__ = [
     'created']
 
 
-BASE_URL = 'http://{}:{}{}'.format(
-    CONFIG['http']['host'], CONFIG['http']['port'], PATH)
-_TIME_FORMAT = CONFIG['data']['time_format']
+_HOST = CONFIG['http']['host']
+_PORT = CONFIG['http']['port']
+BASE_URL = f'http://{_HOST}:{_PORT}{PATH}'
 # Disable urllib3 verbose logging.
 getLogger('requests').setLevel(WARNING)
 
@@ -102,16 +103,16 @@ def delete(ident):
     return result.status_code == 200
 
 
-def get_metadata(ident, metadata, return_values=None):
+def get_metadata(ident, *, return_values=None):
     """Gets metadata."""
 
-    result = get_(_get_url(ident), params={'metadata': metadata})
+    result = get_(_get_url(f'/meta/{ident}'))
 
     if return_values:
         with suppress(KeyError):
             return return_values[result.status_code]
     elif result.status_code == 200:
-        return result.text
+        return result.json
 
     raise FileError(result)
 
@@ -119,54 +120,46 @@ def get_metadata(ident, metadata, return_values=None):
 def exists(ident):
     """Determines whether the respective file exists."""
 
-    return get_metadata(
-        ident, 'exists',
-        return_values={200: True, 404: False})
+    return get_metadata(ident, return_values={200: True, 404: False})
 
 
 def sha256sum(ident):
     """Gets the SHA-256 checksum of the file."""
 
-    return get_metadata(ident, 'sha256sum')
+    return get_metadata(ident)['sha256sum']
 
 
 def size(ident):
     """Gets the file size in bytes."""
 
-    return int(get_metadata(ident, 'size'))
+    return get_metadata(ident)['size']
 
 
 def hardlinks(ident):
     """Gets the file size in bytes."""
 
-    return int(get_metadata(ident, 'hardlinks'))
+    return get_metadata(ident)['hardlinks']
 
 
 def mimetype(ident):
     """Gets the MIME type of the file."""
 
-    return get_metadata(ident, 'mimetype')
+    return get_metadata(ident)['mimetype']
 
 
 def accessed(ident):
     """Gets the access count of the file."""
 
-    return int(get_metadata(ident, 'accessed'))
+    return get_metadata(ident)['accessed']
 
 
-def last_access(ident, time_format=_TIME_FORMAT):
+def last_access(ident):
     """Gets the last access datetime of the file."""
 
-    last_access_ = get_metadata(ident, 'last_access')
-
-    if last_access_ == 'never':
-        return None
-
-    return datetime.strptime(last_access_, time_format)
+    return strpdatetime(get_metadata(ident).get('last_access'))
 
 
-def created(ident, time_format=_TIME_FORMAT):
+def created(ident):
     """Gets the datetime of the file's creation."""
 
-    return datetime.strptime(
-        get_metadata(ident, 'created'), time_format)
+    return strpdatetime(get_metadata(ident)['created'])
