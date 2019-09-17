@@ -12,9 +12,8 @@ from peewee import CharField
 from peewee import DateTimeField
 from peewee import FixedCharField
 from peewee import IntegerField
-from peewee import Model
 
-from peeweeplus import MySQLDatabase
+from peeweeplus import JSONModel, MySQLDatabase
 from mimeutil import mimetype
 
 from filedb.config import CONFIG, CHUNK_SIZE
@@ -29,7 +28,7 @@ BASEDIR = Path(CONFIG['fs']['BASE_DIR'])
 MODE = int(CONFIG['fs']['mode'], 8)
 
 
-class FileDBModel(Model):
+class FileDBModel(JSONModel):
     """A basic model for the file database."""
 
     class Meta:     # pylint: disable=R0903

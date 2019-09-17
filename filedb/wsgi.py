@@ -4,8 +4,11 @@ from functools import partial
 
 from flask import request, Flask, Response
 
+from wsgilib import JSON
+
 from filedb.orm import File
 from filedb.config import CONFIG, PATH, CHUNK_SIZE
+
 
 __all__ = ['APPLICATION']
 
@@ -29,7 +32,7 @@ def _path(node):
 
     path = PATH.rstrip('/')
     node = node.lstrip('/')
-    return '/'.join((path, node))
+    return f'{path}/{node}'
 
 
 def get_metadata(file, metadata):
@@ -57,14 +60,23 @@ def get_data(file):
         return ('Permission error.', 500)
 
 
-@APPLICATION.route(_path('/<int:ident>'), methods=['GET'])
+def _get_file(ident):
+    """Returns a file by the respective identifier."""
+
+    if len(ident) == 64:    # Probably a SHA-256 sum.
+        return File.get(File.sha256sum == ident)
+
+    return File.get(File.id == ident)
+
+
+@APPLICATION.route(_path('/<ident>'), methods=['GET'])
 def get_file(ident):
     """Gets the respective file."""
 
     metadata = request.args.get('metadata')
 
     try:
-        file = File.get(File.id == ident)
+        file = _get_file(ident)
     except File.DoesNotExist:
         if metadata == 'exists':
             return (str(False), 404)
@@ -80,24 +92,24 @@ def get_file(ident):
     return get_metadata(file, metadata)
 
 
-@APPLICATION.route(_path('/<int:ident>'), methods=['DELETE'])
+@APPLICATION.route(_path('/<ident>'), methods=['DELETE'])
 def delete_file(ident):
     """Deletes trhe respective file."""
 
     try:
-        file = File.get(File.id == ident)
+        file = _get_file(ident)
     except File.DoesNotExist:
         return ('No such file.', 400)
 
     return str(file.unlink())
 
 
-@APPLICATION.route(_path('/<int:ident>'), methods=['PUT'])
+@APPLICATION.route(_path('/<ident>'), methods=['PUT'])
 def touch_file(ident):
     """Increases the reference counter."""
 
     try:
-        file = File.get(File.id == ident)
+        file = _get_file(ident)
     except File.DoesNotExist:
         return ('No such file.', 404)
 
@@ -118,4 +130,4 @@ def add_file():
         return (str(error), 500)
 
     record.save()
-    return str(record.id)
+    return JSON(record.to_json())

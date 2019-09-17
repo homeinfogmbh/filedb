@@ -40,21 +40,21 @@ def _get_url(path=''):
 
     base_url = BASE_URL.rstrip('/')
     path = str(path).strip('/')
-    return '/'.join((base_url, path))
+    return f'{base_url}/{path}'
 
 
-def add(data):
+def add(data, *, raw=False):
     """Adds a file."""
 
-    if data:
-        result = post(_get_url(), data=data)
+    if not data:
+        raise FileError('Cowardly refusing to add empty file.')
 
-        if result.status_code == 200:
-            return int(result.text)
+    result = post(_get_url(), data=data)
 
-        raise FileError(result.text)
+    if result.status_code == 200:
+        return result.json if raw else result.json['id']
 
-    raise FileError('Refusing to add empty file.')
+    raise FileError(result.text)
 
 
 def get(ident, nocheck=False):
