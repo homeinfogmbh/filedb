@@ -1,6 +1,5 @@
 """HTTP access to the filedb."""
 
-from contextlib import suppress
 from logging import WARNING, getLogger
 
 from requests import post, get as get_, put as put_, delete as delete_
@@ -103,14 +102,17 @@ def delete(ident):
     return result.status_code == 200
 
 
-def get_metadata(ident, *, return_values=None):
+def get_metadata(ident, *, checkexists=False):
     """Gets metadata."""
 
     result = get_(_get_url(f'/meta/{ident}'))
 
-    if return_values:
-        with suppress(KeyError):
-            return return_values[result.status_code]
+    if checkexists:
+        if result.status_code == 200:
+            return True
+
+        if result.status_code == 404:
+            return False
     elif result.status_code == 200:
         return result.json()
 
@@ -120,7 +122,7 @@ def get_metadata(ident, *, return_values=None):
 def exists(ident):
     """Determines whether the respective file exists."""
 
-    return get_metadata(ident, return_values={200: True, 404: False})
+    return get_metadata(ident, checkexists=True)
 
 
 def sha256sum(ident):
