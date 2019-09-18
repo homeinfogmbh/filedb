@@ -52,7 +52,7 @@ def add(data, *, raw=False):
     result = post(_get_url(), data=data)
 
     if result.status_code == 200:
-        return result.json if raw else result.json['id']
+        return result.json() if raw else result.json()['id']
 
     raise FileError(result.text)
 
