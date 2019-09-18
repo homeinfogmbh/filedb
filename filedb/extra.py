@@ -35,7 +35,7 @@ class FileProperty:
         old_id = getattr(instance, self.integer_field.name)
 
         if data is not None:
-            new_id = add(data)
+            new_id = add(data)['id']
         else:
             new_id = None
 

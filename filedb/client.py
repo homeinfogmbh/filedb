@@ -43,7 +43,7 @@ def _get_url(path=''):
     return f'{base_url}/{path}'
 
 
-def add(data, *, raw=False):
+def add(data):
     """Adds a file."""
 
     if not data:
@@ -52,7 +52,7 @@ def add(data, *, raw=False):
     result = post(_get_url(), data=data)
 
     if result.status_code == 200:
-        return result.json() if raw else result.json()['id']
+        return result.json()
 
     raise FileError(result.text)
 
