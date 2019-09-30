@@ -119,6 +119,11 @@ def clean(files, interactive=True, simulate=True):
 def make_clean(files, interactive, simulate):
     """Invoke cleaning securely."""
 
+    if simulate:
+        LOGGER.info("Don't worry. I'm just simulating.")
+    else:
+        LOGGER.warning('THIS IS NOT A DRILL.')
+
     LOGGER.info('Starting in three seconds...')
 
     try:
