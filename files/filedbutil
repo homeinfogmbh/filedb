@@ -124,9 +124,6 @@ def make_clean(files, interactive, simulate):
     try:
         sleep(3)
     except KeyboardInterrupt:
-        aborted = True
-
-    if aborted:
         return user_abort()
 
     try:
