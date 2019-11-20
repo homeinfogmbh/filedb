@@ -178,3 +178,19 @@ class File(FileDBModel):
         with self.path.open('rb') as file:
             for chunk in iter(partial(file.read, chunk_size), b''):
                 yield chunk
+
+    def get_chunk(self, start=None, end=None):
+        """Returns the respective chunk."""
+        if start >= self.size:
+            start = 0
+
+        if end:
+            length = end - start + 1
+        else:
+            length = self.size - start
+
+        with self.path.open('rb') as file:
+            file.seek(start)
+            chunk = file.read(length)
+
+        return (chunk, start, length)
