@@ -12,12 +12,14 @@ def get_file(ident=None, checksum=None):
 
     if ident is None and checksum is None:
         raise NoIdentError()
-    elif ident is not None:
+
+    if ident is not None:
         return File.get(File.id == ident)
-    elif checksum is not None:
+
+    if checksum is not None:
         return File.get(File.sha256sum == checksum)
-    else:
-        raise AmbiguousIdentError()
+
+    raise AmbiguousIdentError()
 
 
 def purge(ident=None, checksum=None):

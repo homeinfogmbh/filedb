@@ -14,7 +14,6 @@ __all__ = [
     'BASE_URL',
     'add',
     'get',
-    'stream',
     'put',
     'delete',
     'get_metadata',
@@ -25,7 +24,8 @@ __all__ = [
     'mimetype',
     'accessed',
     'last_access',
-    'created']
+    'created'
+]
 
 
 _HOST = CONFIG['http']['host']
@@ -67,20 +67,6 @@ def get(ident, nocheck=False):
         return result.content
 
     raise FileError(result)
-
-
-def stream(ident, nocheck=False, chunk_size=4096, decode_unicode=False):
-    """Yields byte blocks of the respective file."""
-
-    params = {'nocheck': True} if nocheck else None
-    result = get_(_get_url(ident), params=params)
-
-    if result.status_code == 200:
-        for chunk in result.iter_content(
-                chunk_size=chunk_size, decode_unicode=decode_unicode):
-            yield chunk
-    else:
-        raise FileError(result)
 
 
 def put(ident, nocheck=False):
