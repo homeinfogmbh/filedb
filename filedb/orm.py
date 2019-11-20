@@ -128,8 +128,9 @@ class File(FileDBModel):
         """Checks for consistency."""
         sha256sum = sha256()
 
-        for chunk in self.stream():
-            sha256sum.update(chunk)
+        with self.path.open('rb') as file:
+            for chunk in iter(partial(file.read, CHUNK_SIZE), b''):
+                sha256sum.update(chunk)
 
         return sha256sum.hexdigest() == self.sha256sum
 
@@ -170,14 +171,6 @@ class File(FileDBModel):
     def remove(self, force=False):
         """Alias to unlink."""
         return self.unlink(force=force)
-
-    def stream(self, chunk_size=CHUNK_SIZE):
-        """Yields chunks of the specified size."""
-        self.touch()
-
-        with self.path.open('rb') as file:
-            for chunk in iter(partial(file.read, chunk_size), b''):
-                yield chunk
 
     def get_chunk(self, start=None, end=None):
         """Returns the respective chunk."""

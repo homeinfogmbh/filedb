@@ -2,12 +2,13 @@
 
 from functools import partial
 
-from flask import request, Flask, Response
+from flask import request, Flask
 
 from wsgilib import JSON
 
-from filedb.orm import File
 from filedb.config import PATH, CHUNK_SIZE
+from filedb.orm import File
+from filedb.streaming import stream
 
 
 __all__ = ['APPLICATION']
@@ -31,7 +32,7 @@ def get_data(file):
         if not request.args.get('nocheck', False) and not file.consistent:
             return ('Corrupted file.', 500)
 
-        return Response(file.stream(), mimetype=file.mimetype)
+        return stream(file)
     except FileNotFoundError:
         return ('File not found.', 500)
     except PermissionError:
@@ -101,10 +102,10 @@ def touch_file(ident):
 def add_file():
     """Adds a new file."""
 
-    stream = iter(partial(request.stream.read, CHUNK_SIZE), b'')
+    upload_stream = iter(partial(request.stream.read, CHUNK_SIZE), b'')
 
     try:
-        record = File.from_stream(stream)
+        record = File.from_stream(upload_stream)
     except Exception as error:  # pylint: disable=W0703
         return (str(error), 500)
 
