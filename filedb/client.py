@@ -63,7 +63,7 @@ def get(ident, nocheck=False):
     params = {'nocheck': True} if nocheck else None
     result = get_(_get_url(ident), params=params)
 
-    if result.status_code == 200:
+    if 200 <= result.status_code < 300:
         return result.content
 
     raise FileError(result)
