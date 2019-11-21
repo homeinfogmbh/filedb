@@ -2,12 +2,11 @@
 
 from logging import WARNING, getLogger
 
-from requests import post, get as get_, put as put_, delete as delete_
-
-from timelib import strpdatetime
+from requests import post, delete as delete_
 
 from filedb.config import CONFIG, PATH
 from filedb.exceptions import FileError
+from filedb.orm import File
 
 
 __all__ = [
@@ -16,7 +15,6 @@ __all__ = [
     'get',
     'put',
     'delete',
-    'get_metadata',
     'exists',
     'sha256sum',
     'size',
@@ -43,6 +41,20 @@ def _get_url(path=''):
     return f'{base_url}/{path}'
 
 
+def _file_by_id(ident, nocheck=False):
+    """Returns a file by its ID."""
+
+    try:
+        file = File[ident]
+    except File.DoesNotExist:
+        raise FileError('No such file.')
+
+    if nocheck or file.consistent:
+        return file
+
+    raise FileError('Corrupted file.')
+
+
 def add(data):
     """Adds a file."""
 
@@ -57,31 +69,16 @@ def add(data):
     raise FileError(response.text)
 
 
-def get(ident, nocheck=False, stream=False):
+def get(ident, nocheck=False):
     """Gets a file."""
 
-    params = {'nocheck': True} if nocheck else None
-    response = get_(_get_url(ident), params=params, stream=stream)
-
-    if 200 <= response.status_code < 300:
-        if stream:
-            return response     # Response is iterable.
-
-        return response.content
-
-    raise FileError(response)
+    return _file_by_id(ident, nocheck=nocheck).bytes
 
 
 def put(ident, nocheck=False):
     """Increases reference counter."""
 
-    params = {'nocheck': True} if nocheck else None
-    response = put_(_get_url(ident), params=params)
-
-    if response.status_code == 200:
-        return response.content
-
-    raise FileError(response)
+    return _file_by_id(ident, nocheck=nocheck).touch()
 
 
 def delete(ident):
@@ -91,66 +88,54 @@ def delete(ident):
     return response.status_code == 200
 
 
-def get_metadata(ident, *, checkexists=False):
-    """Gets metadata."""
-
-    response = get_(_get_url(f'/meta/{ident}'))
-
-    if checkexists:
-        if response.status_code == 200:
-            return True
-
-        if response.status_code == 404:
-            return False
-    elif response.status_code == 200:
-        return response.json()
-
-    raise FileError(response)
-
-
 def exists(ident):
     """Determines whether the respective file exists."""
 
-    return get_metadata(ident, checkexists=True)
+    try:
+        file = File[ident]
+    except File.DoesNotExist:
+        return False
+
+    return file.exists
 
 
 def sha256sum(ident):
     """Gets the SHA-256 checksum of the file."""
 
-    return get_metadata(ident)['sha256sum']
+    return _file_by_id(ident).sha256sum
 
 
 def size(ident):
     """Gets the file size in bytes."""
 
-    return get_metadata(ident)['size']
+    return _file_by_id(ident).size
 
 
 def hardlinks(ident):
     """Gets the file size in bytes."""
 
-    return get_metadata(ident)['hardlinks']
+    return _file_by_id(ident).hardlinks
 
 
 def mimetype(ident):
     """Gets the MIME type of the file."""
 
-    return get_metadata(ident)['mimetype']
+    return _file_by_id(ident).mimetype
 
 
 def accessed(ident):
     """Gets the access count of the file."""
 
-    return get_metadata(ident)['accessed']
+    return _file_by_id(ident).accessed
 
 
 def last_access(ident):
     """Gets the last access datetime of the file."""
 
-    return strpdatetime(get_metadata(ident).get('last_access'))
+    return _file_by_id(ident).last_access
 
 
 def created(ident):
     """Gets the datetime of the file's creation."""
 
-    return strpdatetime(get_metadata(ident)['created'])
+    return _file_by_id(ident).created
