@@ -15,7 +15,7 @@ class NoIdentError(Exception):
 class FileError(Exception):
     """Indicates errors while accessing files."""
 
-    def __init__(self, result):
-        """Sets the request result."""
-        super().__init__(result)
-        self.result = result
+    def __init__(self, response):
+        """Sets the request response."""
+        super().__init__(response)
+        self.response = response

@@ -9,7 +9,6 @@ from filedb.client import size
 from filedb.exceptions import FileError
 from filedb.extra import FileProperty
 from filedb.orm import File
-from filedb.streaming import stream
 
 
 __all__ = [
@@ -20,7 +19,6 @@ __all__ = [
     'sha256sum',
     'mimetype',
     'size',
-    'stream',
     'FileProperty',
     'File'
 ]

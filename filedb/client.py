@@ -49,60 +49,63 @@ def add(data):
     if not data:
         raise FileError('Cowardly refusing to add empty file.')
 
-    result = post(_get_url(), data=data)
+    response = post(_get_url(), data=data)
 
-    if result.status_code == 200:
-        return result.json()
+    if response.status_code == 200:
+        return response.json()
 
-    raise FileError(result.text)
+    raise FileError(response.text)
 
 
-def get(ident, nocheck=False):
+def get(ident, nocheck=False, stream=False):
     """Gets a file."""
 
     params = {'nocheck': True} if nocheck else None
-    result = get_(_get_url(ident), params=params)
+    response = get_(_get_url(ident), params=params, stream=stream)
 
-    if 200 <= result.status_code < 300:
-        return result.content
+    if 200 <= response.status_code < 300:
+        if stream:
+            return response     # Response is iterable.
 
-    raise FileError(result)
+        return response.content
+
+    raise FileError(response)
 
 
 def put(ident, nocheck=False):
     """Increases reference counter."""
 
     params = {'nocheck': True} if nocheck else None
-    result = put_(_get_url(ident), params=params)
+    response = put_(_get_url(ident), params=params)
 
-    if result.status_code == 200:
-        return result.content
+    if response.status_code == 200:
+        return response.content
 
-    raise FileError(result)
+    raise FileError(response)
 
 
 def delete(ident):
     """Deletes a file."""
 
-    result = delete_(_get_url(ident))
-    return result.status_code == 200
+    response = delete_(_get_url(ident))
+    return response.status_code == 200
 
 
 def get_metadata(ident, *, checkexists=False):
     """Gets metadata."""
 
-    result = get_(_get_url(f'/meta/{ident}'))
+    response = get_(_get_url(f'/meta/{ident}'))
 
     if checkexists:
-        if result.status_code == 200:
+        if response.status_code == 200:
             return True
 
-        if result.status_code == 404:
+        if response.status_code == 404:
             return False
-    elif result.status_code == 200:
-        return result.json()
+    elif response.status_code == 200:
+        return response.json()
 
-    raise FileError(result)
+    raise FileError(response)
 
 
 def exists(ident):
