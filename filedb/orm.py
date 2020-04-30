@@ -127,10 +127,11 @@ class File(FileDBModel):
         """Import file from file system."""
         success = set()
         error = set()
+        files = cls.select().where(True).iterator()
 
-        for index, file in enumerate(cls.select().where(True).iterator()):
+        for index, file in enumerate(files, start=1):
             if not index % 100:
-                print('Processed file #{index+1}')
+                print('Processed file #{index}')
 
             if file.bytes:
                 success.add(file.id)
