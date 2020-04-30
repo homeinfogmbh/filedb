@@ -129,27 +129,43 @@ class File(FileDBModel):
             record.hardlinks = hardlinks
             record.save()
 
-    def load_from_fs(self):
+    @classmethod
+    def load_from_fs(cls):
         """Import file from file system."""
-        if self.bytes:
-            return True
+        success = set()
+        error = set()
 
-        path = f'/srv/filedb/{self.sha256sum}'
+        for file in cls.select(cls.id).where(True):
+            file = cls[file.id]
 
-        try:
-            with open(path, 'rb') as file:
-                self.bytes = file.read()
-        except FileNotFoundError:
-            print('No such file:', path, flush=True)
-        except PermissionError:
-            print('Permission error reading:', path, flush=True)
+            if file.bytes:
+                success.add(file.id)
+                continue
 
-        try:
-            return self.save()
-        except OperationalError:
-            print('Operational error. File:', self.id, 'id:', self.id,
-                  flush=True)
-            return False
+            path = f'/srv/filedb/{file.sha256sum}'
+
+            try:
+                with open(path, 'rb') as f:
+                    file.bytes = f.read()
+            except FileNotFoundError:
+                error.add(file.id)
+                print('No such file:', path, flush=True)
+                continue
+            except PermissionError:
+                error.add(file.id)
+                print('Permission error reading:', path)
+                continue
+
+            try:
+                file.save()
+            except OperationalError:
+                error.add(file.id)
+                print('Operational error. File:', path, 'id:', file.id)
+                continue
+
+            success.add(file.id)
+
+        return (success, error)
 
     def touch(self):
         """Update access counters."""
