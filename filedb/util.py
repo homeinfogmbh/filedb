@@ -65,7 +65,7 @@ def ask(question, default=False, yes=('yes', 'y'), ignorecase=True):
         return default
 
     if ignorecase:
-        return reply.lower() in (y.lower() for y in yes)
+        return reply.lower() in {y.lower() for y in yes}
 
     return reply in yes
 

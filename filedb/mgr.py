@@ -10,8 +10,8 @@ __all__ = ['get_file', 'purge', 'untrack']
 def get_file(ident=None, checksum=None):
     """Gets a file by either identifier or checksum."""
 
-    if ident is None and checksum is None:
-        raise NoIdentError()
+    if ident is not None and checksum is not None:
+        raise AmbiguousIdentError()
 
     if ident is not None:
         return File.get(File.id == ident)
@@ -19,14 +19,14 @@ def get_file(ident=None, checksum=None):
     if checksum is not None:
         return File.get(File.sha256sum == checksum)
 
-    raise AmbiguousIdentError()
+    raise NoIdentError()
 
 
 def purge(ident=None, checksum=None):
-    """Purges a file from the database and server."""
+    """Purges a file from the database and file system."""
 
     file = get_file(ident=ident, checksum=checksum)
-    file.remove()
+    file.unlink(force=True)
 
 
 def untrack(ident=None, checksum=None):

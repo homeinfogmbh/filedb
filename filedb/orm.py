@@ -168,9 +168,7 @@ class File(FileDBModel):
         self.save()
         return True
 
-    def remove(self, force=False):
-        """Alias to unlink."""
-        return self.unlink(force=force)
+    remove = unlink
 
     def get_chunk(self, start=None, end=None):
         """Returns the respective chunk."""
