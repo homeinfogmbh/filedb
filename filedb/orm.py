@@ -135,9 +135,7 @@ class File(FileDBModel):
         success = set()
         error = set()
 
-        for file in cls.select(cls.id).where(True):
-            file = cls[file.id]
-
+        for file in cls.select().where(True).iterator():
             if file.bytes:
                 success.add(file.id)
                 continue
