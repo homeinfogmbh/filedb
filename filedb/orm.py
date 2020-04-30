@@ -126,12 +126,13 @@ class File(FileDBModel):
             print('No such file:', path, flush=True)
         except PermissionError:
             print('Permission error reading:', path, flush=True)
+
+        try:
+            return self.save()
         except OperationalError:
             print('Operational error. File:', self.id, 'id:', self.id,
                   flush=True)
             raise
-
-        return self.save()
 
     def touch(self):
         """Update access counters."""
