@@ -128,7 +128,10 @@ class File(FileDBModel):
         success = set()
         error = set()
 
-        for file in cls.select().where(True).iterator():
+        for index, file in enumerate(cls.select().where(True).iterator()):
+            if not index % 100:
+                print('Processed file #{index+1}')
+
             if file.bytes:
                 success.add(file.id)
                 continue
