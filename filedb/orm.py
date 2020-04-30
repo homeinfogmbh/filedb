@@ -21,7 +21,7 @@ from filedb.config import CONFIG, CHUNK_SIZE
 from filedb.functions import get_range
 
 
-__all__ = ['File']
+__all__ = ['META_FIELDS', 'File']
 
 
 DATABASE = MySQLDatabase.from_config(CONFIG['db'])
@@ -202,3 +202,9 @@ class File(FileDBModel):
         content_range = f'bytes {start}-{end}/{self.size}'
         response.headers.add('Content-Range', content_range)
         return response
+
+
+META_FIELDS = (
+    File.mimetype, File.sha256sum, File.size, File.hardlinks, File.created,
+    File.last_access, File.accessed
+)
