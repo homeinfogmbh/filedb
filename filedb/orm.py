@@ -113,6 +113,9 @@ class File(FileDBModel):
 
     def load_from_fs(self):
         """Import file from file system."""
+        if self.bytes:
+            return True
+
         path = f'/srv/filedb/{self.sha256sum}'
 
         try:
