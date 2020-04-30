@@ -131,7 +131,7 @@ class File(FileDBModel):
 
         for index, file in enumerate(files, start=1):
             if not index % 100:
-                print('Processed file #{index}')
+                print(f'Processed file #{index}')
 
             file = File[file.id]
 
