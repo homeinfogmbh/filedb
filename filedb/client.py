@@ -41,18 +41,13 @@ def _get_url(path=''):
     return f'{base_url}/{path}'
 
 
-def _file_by_id(ident, nocheck=False):
+def _file_by_id(ident):
     """Returns a file by its ID."""
 
     try:
-        file = File[ident]
+        return File[ident]
     except File.DoesNotExist:
         raise FileError('No such file.')
-
-    if nocheck or file.consistent:
-        return file
-
-    raise FileError('Corrupted file.')
 
 
 def add(data):
@@ -69,16 +64,16 @@ def add(data):
     raise FileError(response.text)
 
 
-def get(ident, nocheck=False):
+def get(ident):
     """Gets a file."""
 
-    return _file_by_id(ident, nocheck=nocheck).bytes
+    return _file_by_id(ident).bytes
 
 
-def put(ident, nocheck=False):
+def put(ident):
     """Increases reference counter."""
 
-    return _file_by_id(ident, nocheck=nocheck).touch()
+    return _file_by_id(ident).touch()
 
 
 def delete(ident):
@@ -92,11 +87,9 @@ def exists(ident):
     """Determines whether the respective file exists."""
 
     try:
-        file = File[ident]
+        return File[ident]
     except File.DoesNotExist:
         return False
-
-    return file.exists
 
 
 def sha256sum(ident):

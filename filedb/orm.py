@@ -1,13 +1,12 @@
 """Models for HOMEINFO's global file database."""
 
-from contextlib import suppress
 from datetime import datetime
 from functools import partial
 from hashlib import sha256
-from pathlib import Path
-from tempfile import TemporaryFile
+from tempfile import NamedTemporaryFile
 
 from peewee import BigIntegerField
+from peewee import BlobField
 from peewee import CharField
 from peewee import DateTimeField
 from peewee import FixedCharField
@@ -23,7 +22,6 @@ __all__ = ['File']
 
 
 DATABASE = MySQLDatabase.from_config(CONFIG['db'])
-BASEDIR = Path(CONFIG['fs']['BASE_DIR'])
 MODE = int(CONFIG['fs']['mode'], 8)
 
 
@@ -39,6 +37,7 @@ class FileDBModel(JSONModel):
 class File(FileDBModel):
     """A file entry."""
 
+    bytes = BlobField()
     mimetype = CharField(255)
     sha256sum = FixedCharField(64)
     size = BigIntegerField()   # File size in bytes.
@@ -52,20 +51,18 @@ class File(FileDBModel):
         return str(self.sha256sum)
 
     @classmethod
-    def _from_temporary_file(cls, temp, sha256sum, chunk_size):
+    def _from_temporary_file(cls, temp, sha256sum, mime_type, chunk_size):
         """Creates the file from a temporary file."""
         record = cls()
         record.sha256sum = sha256sum
-        path = BASEDIR.joinpath(sha256sum)
-        size = 0
+        record.bytes = b''
+        record.size = 0
 
-        with path.open('wb') as file:
-            for chunk in iter(partial(temp.read, chunk_size), b''):
-                size += len(chunk)
-                file.write(chunk)
+        for chunk in iter(partial(temp.read, chunk_size), b''):
+            record.bytes += chunk
+            record.size += len(chunk)
 
-        record.size = size
-        record.mimetype = mimetype(str(path))
+        record.mimetype = mime_type
         return record
 
     @classmethod
@@ -73,7 +70,7 @@ class File(FileDBModel):
         """Creates a file from the respective stream."""
         sha256sum = sha256()
 
-        with TemporaryFile('w+b') as tmp:
+        with NamedTemporaryFile('w+b') as tmp:
             for chunk in stream:
                 tmp.write(chunk)
                 sha256sum.update(chunk)
@@ -85,7 +82,8 @@ class File(FileDBModel):
             except cls.DoesNotExist:
                 tmp.flush()
                 tmp.seek(0)
-                return cls._from_temporary_file(tmp, sha256sum, chunk_size)
+                return cls._from_temporary_file(
+                    tmp, sha256sum, mimetype(tmp.name), chunk_size)
 
             record.hardlinks += 1
             return record
@@ -113,38 +111,19 @@ class File(FileDBModel):
             record.hardlinks = hardlinks
             record.save()
 
-    @property
-    def path(self):
-        """Returns the file's path."""
-        return BASEDIR.joinpath(self.sha256sum)
+    def load_from_fs(self):
+        """Import file from file system."""
+        path = f'/srv/filedb/{self.sha256sum}'
 
-    @property
-    def exists(self):
-        """Checks if the file exists on the system."""
-        return self.path.is_file()
+        try:
+            with open(path, 'rb') as file:
+                self.bytes = file.read()
+        except FileNotFoundError:
+            print('No such file:', path, flush=True)
+        except PermissionError:
+            print('Permission error reading:', path, flush=True)
 
-    @property
-    def consistent(self):
-        """Checks for consistency."""
-        sha256sum = sha256()
-
-        with self.path.open('rb') as file:
-            for chunk in iter(partial(file.read, CHUNK_SIZE), b''):
-                sha256sum.update(chunk)
-
-        return sha256sum.hexdigest() == self.sha256sum
-
-    @property
-    def bytes(self):
-        """Returns the bytes of the respective file."""
-        with self.path.open('rb') as file:
-            return file.read()
-
-    @bytes.setter
-    def bytes(self, bytes_):
-        """Returns the bytes of the respective file."""
-        with self.path.open('wb') as file:
-            return file.write(bytes_)
+        return self.save()
 
     def touch(self):
         """Update access counters."""
@@ -157,12 +136,6 @@ class File(FileDBModel):
         self.hardlinks += -1
 
         if not self.hardlinks or force:
-            with suppress(FileNotFoundError):
-                try:
-                    self.path.unlink()
-                except PermissionError:
-                    return False
-
             return self.delete_instance()
 
         self.save()
@@ -176,12 +149,10 @@ class File(FileDBModel):
             start = 0
 
         if end:
+            chunk = self.bytes[start:end]
             length = end - start + 1
         else:
+            chunk = self.bytes[start:]
             length = self.size - start
-
-        with self.path.open('rb') as file:
-            file.seek(start)
-            chunk = file.read(length)
 
         return (chunk, start, length)
