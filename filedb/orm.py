@@ -6,6 +6,7 @@ from hashlib import sha256
 from tempfile import NamedTemporaryFile
 
 from flask import Response
+from mimetypes import guess_extension
 from peewee import BigIntegerField
 from peewee import BlobField
 from peewee import CharField
@@ -120,6 +121,16 @@ class File(FileDBModel):
                 continue
 
             record.unlink(force=True)
+
+    @property
+    def suffix(self):
+        """Returns the file suffix."""
+        return guess_extension(self.mimetype) or ''
+
+    @property
+    def filename(self):
+        """Returns a unique file name from the SHA-256 hash and suffix."""
+        return self.sha256sum + self.suffix
 
     def touch(self):
         """Update access counters."""
