@@ -5,6 +5,7 @@ from functools import partial
 from hashlib import sha256
 from tempfile import NamedTemporaryFile
 
+from peewee import OperationalError
 from peewee import BigIntegerField
 from peewee import BlobField
 from peewee import CharField
@@ -125,6 +126,10 @@ class File(FileDBModel):
             print('No such file:', path, flush=True)
         except PermissionError:
             print('Permission error reading:', path, flush=True)
+        except OperationalError:
+            print('Operational error. File:', self.id, 'id:', self.id,
+                  flush=True)
+            raise
 
         return self.save()
 
