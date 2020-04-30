@@ -149,7 +149,7 @@ class File(FileDBModel):
         except OperationalError:
             print('Operational error. File:', self.id, 'id:', self.id,
                   flush=True)
-            raise
+            return False
 
     def touch(self):
         """Update access counters."""
