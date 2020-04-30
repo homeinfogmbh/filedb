@@ -44,7 +44,6 @@ class File(FileDBModel):
     mimetype = CharField(255)
     sha256sum = FixedCharField(64)
     size = BigIntegerField()   # File size in bytes.
-    hardlinks = IntegerField(default=1)
     created = DateTimeField(default=datetime.now)
     last_access = DateTimeField(null=True, default=None)
     accessed = IntegerField(default=0)
@@ -54,7 +53,7 @@ class File(FileDBModel):
         return str(self.sha256sum)
 
     @classmethod
-    def from_bytes(cls, bytes_):
+    def from_bytes(cls, bytes_, *, save=False):
         """Creates a file from the given bytes."""
         sha256sum = sha256(bytes_).hexdigest()
 
@@ -66,25 +65,29 @@ class File(FileDBModel):
             file.mimetype = mimetype(bytes_)
             file.sha256sum = sha256sum
             file.size = len(bytes_)
+
+            if save:
+                file.save()
+
             return file
 
     @classmethod
     def _from_temporary_file(cls, temp, sha256sum, mime_type, chunk_size):
         """Creates the file from a temporary file."""
-        record = cls()
-        record.sha256sum = sha256sum
-        record.bytes = b''
-        record.size = 0
+        file = cls()
+        file.sha256sum = sha256sum
+        file.bytes = b''
+        file.size = 0
 
         for chunk in iter(partial(temp.read, chunk_size), b''):
-            record.bytes += chunk
-            record.size += len(chunk)
+            file.bytes += chunk
+            file.size += len(chunk)
 
-        record.mimetype = mime_type
-        return record
+        file.mimetype = mime_type
+        return file
 
     @classmethod
-    def from_stream(cls, stream, chunk_size=CHUNK_SIZE):
+    def from_stream(cls, stream, *, chunk_size=CHUNK_SIZE, save=False):
         """Creates a file from the respective stream."""
         sha256sum = sha256()
 
@@ -96,15 +99,17 @@ class File(FileDBModel):
             sha256sum = sha256sum.hexdigest()
 
             try:
-                record = cls.get(cls.sha256sum == sha256sum)
+                return cls.get(cls.sha256sum == sha256sum)
             except cls.DoesNotExist:
                 tmp.flush()
                 tmp.seek(0)
-                return cls._from_temporary_file(
+                file = cls._from_temporary_file(
                     tmp, sha256sum, mimetype(tmp.name), chunk_size)
 
-            record.hardlinks += 1
-            return record
+                if save:
+                    file.save()
+
+                return file
 
     @classmethod
     def purge(cls, orphans):
@@ -116,18 +121,6 @@ class File(FileDBModel):
                 continue
 
             record.unlink(force=True)
-
-    @classmethod
-    def update_hardlinks(cls, references):
-        """Fixes the hard links to the given reference dictionary."""
-        for ident, hardlinks in references.items():
-            try:
-                record = cls.get(cls.id == ident)
-            except cls.DoesNotExist:
-                continue
-
-            record.hardlinks = hardlinks
-            record.save()
 
     @classmethod
     def load_from_fs(cls):
@@ -171,18 +164,6 @@ class File(FileDBModel):
         self.last_access = datetime.now()
         self.save()
 
-    def unlink(self, force=False):
-        """Unlinks / removes the file."""
-        self.hardlinks += -1
-
-        if not self.hardlinks or force:
-            return self.delete_instance()
-
-        self.save()
-        return True
-
-    remove = unlink
-
     def stream(self):
         """Generic WSGI function to stream a file."""
         start, end = get_range()
@@ -205,6 +186,6 @@ class File(FileDBModel):
 
 
 META_FIELDS = (
-    File.mimetype, File.sha256sum, File.size, File.hardlinks, File.created,
-    File.last_access, File.accessed
+    File.mimetype, File.sha256sum, File.size, File.created, File.last_access,
+    File.accessed
 )
