@@ -5,6 +5,7 @@ from functools import partial
 from hashlib import sha256
 from tempfile import NamedTemporaryFile
 
+from flask import Response
 from peewee import OperationalError
 from peewee import BigIntegerField
 from peewee import BlobField
@@ -17,6 +18,7 @@ from peeweeplus import JSONModel, MySQLDatabase
 from mimeutil import mimetype
 
 from filedb.config import CONFIG, CHUNK_SIZE
+from filedb.functions import get_range
 
 
 __all__ = ['File']
@@ -50,6 +52,21 @@ class File(FileDBModel):
     def __str__(self):
         """Converts the file to a string."""
         return str(self.sha256sum)
+
+    @classmethod
+    def from_bytes(cls, bytes_):
+        """Creates a file from the given bytes."""
+        sha256sum = sha256(bytes_).hexdigest()
+
+        try:
+            return cls.get(cls.sha256sum == sha256sum)
+        except cls.DoesNotExist:
+            file = cls()
+            file.bytes = bytes_
+            file.mimetype = mimetype(bytes_)
+            file.sha256sum = sha256sum
+            file.size = len(bytes_)
+            return file
 
     @classmethod
     def _from_temporary_file(cls, temp, sha256sum, mime_type, chunk_size):
@@ -152,16 +169,22 @@ class File(FileDBModel):
 
     remove = unlink
 
-    def get_chunk(self, start=None, end=None):
-        """Returns the respective chunk."""
+    def stream(self):
+        """Generic WSGI function to stream a file."""
+        start, end = get_range()
+
         if start >= self.size:
             start = 0
 
         if end:
             chunk = self.bytes[start:end]
-            length = end - start + 1
         else:
             chunk = self.bytes[start:]
-            length = self.size - start
+            end = self.size - 1
 
-        return (chunk, start, length)
+        response = Response(
+            chunk, 206, mimetype=self.mimetype, content_type=self.mimetype,
+            direct_passthrough=True)
+        content_range = f'bytes {start}-{end}/{self.size}'
+        response.headers.add('Content-Range', content_range)
+        return response
