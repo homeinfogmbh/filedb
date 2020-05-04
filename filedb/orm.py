@@ -3,10 +3,10 @@
 from datetime import datetime
 from functools import partial
 from hashlib import sha256
+from mimetypes import guess_extension
 from tempfile import NamedTemporaryFile
 
 from flask import Response
-from mimetypes import guess_extension
 from peewee import BigIntegerField
 from peewee import BlobField
 from peewee import CharField
@@ -56,9 +56,10 @@ class File(FileDBModel):
     def from_bytes(cls, bytes_, *, save=False):
         """Creates a file from the given bytes."""
         sha256sum = sha256(bytes_).hexdigest()
+        condition = cls.sha256sum == sha256sum
 
         try:
-            return cls.get(cls.sha256sum == sha256sum)
+            return cls.select(*META_FIELDS).where(condition).get()
         except cls.DoesNotExist:
             file = cls()
             file.bytes = bytes_
