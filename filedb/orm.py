@@ -53,13 +53,18 @@ class File(FileDBModel):
         return str(self.sha256sum)
 
     @classmethod
+    def by_sha256sum(cls, sha256sum):
+        """Returns a file by its SHA-256 sum."""
+        file = cls.select(cls.id).where(cls.sha256sum == sha256sum).get()
+        return cls[file.id]
+
+    @classmethod
     def from_bytes(cls, bytes_, *, save=False):
         """Creates a file from the given bytes."""
         sha256sum = sha256(bytes_).hexdigest()
-        condition = cls.sha256sum == sha256sum
 
         try:
-            return cls.select(*META_FIELDS).where(condition).get()
+            return cls.by_sha256sum(sha256sum)
         except cls.DoesNotExist:
             file = cls()
             file.bytes = bytes_
@@ -100,7 +105,7 @@ class File(FileDBModel):
             sha256sum = sha256sum.hexdigest()
 
             try:
-                return cls.get(cls.sha256sum == sha256sum)
+                return cls.by_sha256sum(sha256sum)
             except cls.DoesNotExist:
                 tmp.flush()
                 tmp.seek(0)
@@ -111,17 +116,6 @@ class File(FileDBModel):
                     file.save()
 
                 return file
-
-    @classmethod
-    def purge(cls, orphans):
-        """Purge orphans from the filedb."""
-        for orphan in orphans:
-            try:
-                record = cls.get(cls.id == orphan)
-            except cls.DoesNotExist:
-                continue
-
-            record.unlink(force=True)
 
     @property
     def suffix(self):
