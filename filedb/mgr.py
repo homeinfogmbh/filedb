@@ -14,10 +14,10 @@ def get_file(ident=None, checksum=None):
         raise AmbiguousIdentError()
 
     if ident is not None:
-        return File.get(File.id == ident)
+        return File[ident]
 
     if checksum is not None:
-        return File.get(File.sha256sum == checksum)
+        return File.by_sha256sum(checksum)
 
     raise NoIdentError()
 
