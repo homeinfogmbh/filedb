@@ -117,6 +117,12 @@ class File(FileDBModel):
 
                 return file
 
+    @classmethod
+    def get_fast(cls, *args, **kwargs):
+        """Returns a single file with a fast query."""
+        sparse_file = cls.select(cls.id).where(*args, **kwargs).get()
+        return cls[sparse_file.id]
+
     @property
     def suffix(self):
         """Returns the file suffix."""
