@@ -3,7 +3,6 @@
 from datetime import datetime
 from functools import partial
 from hashlib import sha256
-from mimetypes import guess_extension
 from tempfile import NamedTemporaryFile
 
 from flask import Response
@@ -15,7 +14,7 @@ from peewee import FixedCharField
 from peewee import IntegerField
 
 from peeweeplus import JSONModel, MySQLDatabase
-from mimeutil import mimetype
+from mimeutil import mimetype, mimetype_to_ext
 
 from filedb.config import CONFIG, CHUNK_SIZE
 from filedb.functions import get_range
@@ -125,7 +124,7 @@ class File(FileDBModel):
     @property
     def suffix(self):
         """Returns the file suffix."""
-        return guess_extension(self.mimetype) or ''
+        return mimetype_to_ext(self.mimetype)
 
     @property
     def filename(self):
