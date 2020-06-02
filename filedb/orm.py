@@ -24,7 +24,6 @@ __all__ = ['META_FIELDS', 'File']
 
 
 DATABASE = MySQLDatabase.from_config(CONFIG['db'])
-MODE = int(CONFIG['fs']['mode'], 8)
 
 
 class FileDBModel(JSONModel):
