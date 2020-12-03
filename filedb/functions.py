@@ -1,6 +1,7 @@
 """Common functions."""
 
 from re import search
+from typing import Tuple
 
 from flask import request
 
@@ -8,7 +9,7 @@ from flask import request
 __all__ = ['get_range']
 
 
-def get_range():
+def get_range() -> Tuple[int, int]:
     """Gets the requested stream range."""
 
     range = request.headers.get('Range')    # pylint: disable=W0622

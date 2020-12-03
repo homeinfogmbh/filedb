@@ -7,4 +7,4 @@ __all__ = ['CONFIG', 'CHUNK_SIZE']
 
 
 CONFIG = loadcfg('filedb.conf')
-CHUNK_SIZE = int(CONFIG['data']['chunk_size'])
+CHUNK_SIZE = CONFIG.getint('data', 'chunk_size')

@@ -1,23 +1,24 @@
 #! /usr/bin/env python3
 """File database utility"""
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from collections import defaultdict
 from json import dumps
 from logging import DEBUG, INFO, basicConfig, getLogger
 from pathlib import Path
 from sys import argv, exit  # pylint: disable=W0622
 from time import sleep
+from typing import Dict, Iterable
 
 from blessings import Terminal
-
-from filedb.orm import File
 
 # References.
 from hinews.orm import Image as HinewsImage
 from his.orm import CustomerSettings as HisCustomerSettings
 from hisfs.orm import File as HisfsFile
 from openimmodb import Anhang as OpenimmodbAnhang, Kontakt as OpenimmodbKontakt
+
+from filedb.orm import File
 
 
 __all__ = ['main']
@@ -35,7 +36,7 @@ LOGGER = getLogger(Path(argv[0]).name)
 LOG_FORMAT = '[%(levelname)s] %(name)s: %(message)s'
 
 
-def get_args():
+def get_args() -> Namespace:
     """Parses the CLI arguments."""
 
     parser = ArgumentParser(description='File database utility.')
@@ -53,7 +54,8 @@ def get_args():
     return parser.parse_args()
 
 
-def ask(question, default=False, yes=('yes', 'y'), ignorecase=True):
+def ask(question: str, default: bool = False,
+        yes: Iterable[str] = ('yes', 'y'), ignorecase: bool = True) -> bool:
     """Ask a question and return accordingly."""
 
     try:
@@ -65,12 +67,12 @@ def ask(question, default=False, yes=('yes', 'y'), ignorecase=True):
         return default
 
     if ignorecase:
-        return reply.lower() in {y.lower() for y in yes}
+        return reply.casefold() in {y.casefold() for y in yes}
 
     return reply in yes
 
 
-def user_abort():
+def user_abort() -> int:
     """Indicate abort by user."""
 
     print(flush=True)
@@ -78,7 +80,8 @@ def user_abort():
     return 1
 
 
-def clean(files, *, interactive=True, simulate=True):
+def clean(files: Dict[int, int], *, interactive: bool = True,
+          simulate: bool = True):
     """Clean filedb records."""
 
     count = 0
@@ -119,7 +122,8 @@ def clean(files, *, interactive=True, simulate=True):
     LOGGER.debug('Deleted: %i, kept: %i, updated: %i.', deleted, kept, updated)
 
 
-def make_clean(files, interactive, simulate):
+def make_clean(files: Dict[int, int], interactive: bool,
+               simulate: bool) -> int:
     """Invoke cleaning securely."""
 
     if simulate:

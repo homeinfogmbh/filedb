@@ -1,9 +1,11 @@
 """Models for HOMEINFO's global file database."""
 
+from __future__ import annotations
 from datetime import datetime
 from functools import partial
 from hashlib import sha256
 from tempfile import NamedTemporaryFile
+from typing import IO, Iterator
 
 from flask import Response
 from peewee import BigIntegerField
@@ -26,7 +28,7 @@ __all__ = ['META_FIELDS', 'File']
 DATABASE = MySQLDatabase.from_config(CONFIG['db'])
 
 
-class FileDBModel(JSONModel):
+class FileDBModel(JSONModel):   # pylint: disable=R0903
     """A basic model for the file database."""
 
     class Meta:     # pylint: disable=R0903
@@ -51,18 +53,18 @@ class File(FileDBModel):
         return str(self.sha256sum)
 
     @classmethod
-    def get_fast(cls, *args, **kwargs):
+    def get_fast(cls, *args, **kwargs) -> File:
         """Returns a single file with a fast query."""
         sparse_file = cls.select(cls.id).where(*args, **kwargs).get()
         return cls[sparse_file.id]
 
     @classmethod
-    def by_sha256sum(cls, sha256sum):
+    def by_sha256sum(cls, sha256sum: str) -> File:
         """Returns a file by its SHA-256 sum."""
         return cls.get_fast(cls.sha256sum == sha256sum)
 
     @classmethod
-    def from_bytes(cls, bytes_, *, save=False):
+    def from_bytes(cls, bytes_: bytes, *, save: bool = False) -> File:
         """Creates a file from the given bytes."""
         sha256sum = sha256(bytes_).hexdigest()
 
@@ -81,7 +83,8 @@ class File(FileDBModel):
             return file
 
     @classmethod
-    def _from_temporary_file(cls, temp, sha256sum, mime_type, chunk_size):
+    def _from_temporary_file(cls, temp: IO, sha256sum: str, mime_type: str,
+                             chunk_size: int) -> File:
         """Creates the file from a temporary file."""
         file = cls()
         file.sha256sum = sha256sum
@@ -96,7 +99,8 @@ class File(FileDBModel):
         return file
 
     @classmethod
-    def from_stream(cls, stream, *, chunk_size=CHUNK_SIZE, save=False):
+    def from_stream(cls, stream: Iterator[bytes], *,
+                    chunk_size: int = CHUNK_SIZE, save: bool = False) -> File:
         """Creates a file from the respective stream."""
         sha256sum = sha256()
 
@@ -121,12 +125,12 @@ class File(FileDBModel):
                 return file
 
     @property
-    def suffix(self):
+    def suffix(self) -> str:
         """Returns the file suffix."""
         return mimetype_to_ext(self.mimetype)
 
     @property
-    def filename(self):
+    def filename(self) -> str:
         """Returns a unique file name from the SHA-256 hash and suffix."""
         return self.sha256sum + self.suffix
 
@@ -136,7 +140,7 @@ class File(FileDBModel):
         self.last_access = datetime.now()
         self.save()
 
-    def stream(self):
+    def stream(self) -> Response:
         """Generic WSGI function to stream a file."""
         start, end = get_range()
 
