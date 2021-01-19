@@ -53,15 +53,9 @@ class File(FileDBModel):
         return str(self.sha256sum)
 
     @classmethod
-    def get_fast(cls, *args, **kwargs) -> File:
-        """Returns a single file with a fast query."""
-        sparse_file = cls.select(cls.id).where(*args, **kwargs).get()
-        return cls[sparse_file.id]
-
-    @classmethod
     def by_sha256sum(cls, sha256sum: str) -> File:
         """Returns a file by its SHA-256 sum."""
-        return cls.get_fast(cls.sha256sum == sha256sum)
+        return cls.select().where(cls.sha256sum == sha256sum).get()
 
     @classmethod
     def from_bytes(cls, bytes_: bytes, *, save: bool = False) -> File:
