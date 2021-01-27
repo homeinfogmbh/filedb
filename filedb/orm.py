@@ -156,6 +156,11 @@ class File(FileDBModel):
 
 
 META_FIELDS = (
-    File.mimetype, File.sha256sum, File.size, File.created, File.last_access,
+    File.id,
+    File.mimetype,
+    File.sha256sum,
+    File.size,
+    File.created,
+    File.last_access,
     File.accessed
 )
