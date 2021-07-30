@@ -8,6 +8,7 @@ from tempfile import NamedTemporaryFile
 from typing import IO, Iterator
 
 from flask import Response
+from peewee import IntegrityError
 from peewee import BigIntegerField
 from peewee import BlobField
 from peewee import CharField
@@ -72,7 +73,10 @@ class File(FileDBModel):
             file.size = len(bytes_)
 
             if save:
-                file.save()
+                try:
+                    file.save()
+                except IntegrityError:
+                    return cls.by_sha256sum(sha256sum)
 
             return file
 
