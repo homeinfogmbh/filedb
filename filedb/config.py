@@ -3,8 +3,7 @@
 from configlib import loadcfg
 
 
-__all__ = ['CONFIG', 'CHUNK_SIZE']
+__all__ = ['CONFIG']
 
 
 CONFIG = loadcfg('filedb.conf')
-CHUNK_SIZE = CONFIG.getint('data', 'chunk_size')

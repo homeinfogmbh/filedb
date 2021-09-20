@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 from datetime import datetime
-from functools import partial
 from hashlib import sha256
-from tempfile import NamedTemporaryFile
-from typing import IO, Iterator
+from typing import Iterator
 
 from flask import Response
 from peewee import IntegrityError
@@ -19,7 +17,7 @@ from peewee import IntegerField
 from peeweeplus import JSONModel, MySQLDatabase
 from mimeutil import mimetype, mimetype_to_ext
 
-from filedb.config import CONFIG, CHUNK_SIZE
+from filedb.config import CONFIG
 from filedb.functions import get_range
 
 
@@ -81,46 +79,10 @@ class File(FileDBModel):
             return file
 
     @classmethod
-    def _from_temporary_file(cls, temp: IO, sha256sum: str, mime_type: str,
-                             chunk_size: int) -> File:
-        """Creates the file from a temporary file."""
-        file = cls()
-        file.sha256sum = sha256sum
-        file.bytes = b''
-        file.size = 0
-
-        for chunk in iter(partial(temp.read, chunk_size), b''):
-            file.bytes += chunk
-            file.size += len(chunk)
-
-        file.mimetype = mime_type
-        return file
-
-    @classmethod
     def from_stream(cls, stream: Iterator[bytes], *,
-                    chunk_size: int = CHUNK_SIZE, save: bool = False) -> File:
+                    save: bool = False) -> File:
         """Creates a file from the respective stream."""
-        sha256sum = sha256()
-
-        with NamedTemporaryFile('w+b') as tmp:
-            for chunk in stream:
-                tmp.write(chunk)
-                sha256sum.update(chunk)
-
-            sha256sum = sha256sum.hexdigest()
-
-            try:
-                return cls.by_sha256sum(sha256sum)
-            except cls.DoesNotExist:
-                tmp.flush()
-                tmp.seek(0)
-                file = cls._from_temporary_file(
-                    tmp, sha256sum, mimetype(tmp.name), chunk_size)
-
-                if save:
-                    file.save()
-
-                return file
+        return cls.from_bytes(b''.join(stream), save=save)
 
     @property
     def suffix(self) -> str:
