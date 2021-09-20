@@ -66,7 +66,7 @@ class File(FileDBModel):
         return self
 
     @classmethod
-    def _from_bytes(cls, bytes_: bytes, sha256sum: sha256, save: bool) -> File:
+    def _from_bytes(cls, bytes_: bytes, sha256sum: str, *, save: bool) -> File:
         """Creates a new file."""
         file = cls()
         file.bytes = bytes_
@@ -83,7 +83,7 @@ class File(FileDBModel):
         try:
             return cls.by_sha256sum(sha256sum)
         except cls.DoesNotExist:
-            return cls._from_bytes(bytes, sha256sum, save)
+            return cls._from_bytes(bytes, sha256sum, save=save)
 
     @classmethod
     def from_stream(cls, stream: Iterator[bytes], *,
