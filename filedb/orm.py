@@ -56,6 +56,25 @@ class File(FileDBModel):
         """Returns a file by its SHA-256 sum."""
         return cls.select().where(cls.sha256sum == sha256sum).get()
 
+    def save_unique(self):
+        """Saves the file or returns an equivalent record by its SHA-256 sum."""
+        try:
+            self.save()
+        except IntegrityError:
+            return type(self).by_sha256sum(self.sha256sum)
+
+        return self
+
+    @classmethod
+    def _from_bytes(cls, bytes_: bytes, sha256sum: sha256, save: bool) -> File:
+        """Creates a new file."""
+        file = cls()
+        file.bytes = bytes_
+        file.mimetype = mimetype(bytes_)
+        file.sha256sum = sha256sum
+        file.size = len(bytes_)
+        return file.save_unique() if save else file
+
     @classmethod
     def from_bytes(cls, bytes_: bytes, *, save: bool = False) -> File:
         """Creates a file from the given bytes."""
@@ -64,19 +83,7 @@ class File(FileDBModel):
         try:
             return cls.by_sha256sum(sha256sum)
         except cls.DoesNotExist:
-            file = cls()
-            file.bytes = bytes_
-            file.mimetype = mimetype(bytes_)
-            file.sha256sum = sha256sum
-            file.size = len(bytes_)
-
-            if save:
-                try:
-                    file.save()
-                except IntegrityError:
-                    return cls.by_sha256sum(sha256sum)
-
-            return file
+            return cls._from_bytes(bytes, sha256sum, save)
 
     @classmethod
     def from_stream(cls, stream: Iterator[bytes], *,
