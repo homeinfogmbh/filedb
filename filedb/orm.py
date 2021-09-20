@@ -56,15 +56,6 @@ class File(FileDBModel):
         """Returns a file by its SHA-256 sum."""
         return cls.select().where(cls.sha256sum == sha256sum).get()
 
-    def save_unique(self):
-        """Saves the file or returns an equivalent record by its SHA-256 sum."""
-        try:
-            self.save()
-        except IntegrityError:
-            return type(self).by_sha256sum(self.sha256sum)
-
-        return self
-
     @classmethod
     def _from_bytes(cls, bytes_: bytes, sha256sum: str, *, save: bool) -> File:
         """Creates a new file."""
@@ -100,6 +91,15 @@ class File(FileDBModel):
     def filename(self) -> str:
         """Returns a unique file name from the SHA-256 hash and suffix."""
         return self.sha256sum + self.suffix
+
+    def save_unique(self):
+        """Saves the file or returns an equivalent record by its SHA-256 sum."""
+        try:
+            self.save()
+        except IntegrityError:
+            return type(self).by_sha256sum(self.sha256sum)
+
+        return self
 
     def touch(self):
         """Update access counters."""
