@@ -25,7 +25,7 @@ __all__ = ['META_FIELDS', 'File']
 
 
 DATABASE = MySQLDatabase.from_config(CONFIG['db'])
-SHA256 = type(sha256)
+SHA256 = type(sha256())
 
 
 class FileDBModel(JSONModel):   # pylint: disable=R0903
