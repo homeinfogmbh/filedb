@@ -25,12 +25,13 @@ __all__ = ['main']
 
 
 TERMINAL = Terminal()
-REFERENCES = (
+REFERENCES = [
     (OpenimmodbAnhang, 'file'),
     (OpenimmodbKontakt, 'foto'),
     (HisCustomerSettings, '_logo'),
     (HisfsFile, '_file'),
-    (HinewsImage, '_file'))
+    (HinewsImage, '_file')
+]
 CLEANUP_QUESTION = 'Type YES if you really want to clean up: '
 LOGGER = getLogger(Path(argv[0]).name)
 LOG_FORMAT = '[%(levelname)s] %(name)s: %(message)s'
