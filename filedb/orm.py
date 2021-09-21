@@ -25,6 +25,7 @@ __all__ = ['META_FIELDS', 'File']
 
 
 DATABASE = MySQLDatabase.from_config(CONFIG['db'])
+SHA256 = type(sha256)
 
 
 class FileDBModel(JSONModel):   # pylint: disable=R0903
@@ -52,15 +53,15 @@ class File(FileDBModel):
         return str(self.sha256sum)
 
     @classmethod
-    def by_sha256sum(cls, sha256sum: Union[sha256, str]) -> File:
+    def by_sha256sum(cls, sha256sum: Union[SHA256, str]) -> File:
         """Returns a file by its SHA-256 sum."""
-        if isinstance(sha256sum, sha256):
+        if isinstance(sha256sum, SHA256):
             return cls.by_sha256sum(sha256sum.hexdigest())
 
         return cls.select().where(cls.sha256sum == sha256sum).get()
 
     @classmethod
-    def _from_bytes(cls, bytes_: bytes, sha256sum: sha256, *,
+    def _from_bytes(cls, bytes_: bytes, sha256sum: SHA256, *,
                     save: bool) -> File:
         """Creates a new file."""
         file = cls()
