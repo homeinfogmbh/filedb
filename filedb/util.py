@@ -81,6 +81,39 @@ def user_abort() -> int:
     return 1
 
 
+def clean_no_hardlinks(file: File, interactive: bool, simulate: bool) -> bool:
+    """Clean files without hardlinks."""
+
+    LOGGER.info('File <%i> is not used.', file.id)
+
+    if not interactive or ask(f'Delete file <{file.id}>? '):
+        if not simulate:
+            file.remove(force=True)
+
+        LOGGER.info('DELETED <%i> (%s).', file.id, file.sha256sum)
+        return True
+
+    LOGGER.info('Keeping <%i>.', file.id)
+    return False
+
+
+def update_hardlinks(file: File, hardlinks: int, simulate: bool) -> bool:
+    """Updates a file's hardlinks."""
+
+    if file.hardlinks == hardlinks:
+        return False
+
+    old_hardlinks, file.hardlinks = file.hardlinks, hardlinks
+
+    if not simulate:
+        file.save()
+
+    LOGGER.info(
+        'Updated hardlinks of <%s> from %i to %i.',
+        file.id, old_hardlinks, hardlinks)
+    return True
+
+
 def clean(files: dict[int, int], *, interactive: bool = True,
           simulate: bool = True):
     """Clean filedb records."""
@@ -94,30 +127,15 @@ def clean(files: dict[int, int], *, interactive: bool = True,
         hardlinks = files[file.id]
 
         if hardlinks == 0:
-            LOGGER.info('File <%i> is not used.', file.id)
-
-            if not interactive or ask(f'Delete file <{file.id}>? '):
-                if not simulate:
-                    file.remove(force=True)
-
+            if clean_no_hardlinks(file, interactive, simulate):
                 deleted += 1
-                LOGGER.info('DELETED <%i> (%s).', file.id, file.sha256sum)
             else:
                 kept += 1
-                LOGGER.info('Keeping <%i>.', file.id)
         else:
             kept += 1
 
-            if file.hardlinks != hardlinks:
-                old_hardlinks, file.hardlinks = file.hardlinks, hardlinks
-
-                if not simulate:
-                    file.save()
-
+            if update_hardlinks(file, hardlinks, simulate):
                 updated += 1
-                LOGGER.info(
-                    'Updated hardlinks of <%s> from %i to %i.',
-                    file.id, old_hardlinks, hardlinks)
 
     LOGGER.debug('Processed %i files.', count)
     LOGGER.debug('Deleted: %i, kept: %i, updated: %i.', deleted, kept, updated)
