@@ -8,7 +8,7 @@ from logging import DEBUG, INFO, basicConfig, getLogger
 from pathlib import Path
 from sys import argv, exit  # pylint: disable=W0622
 from time import sleep
-from typing import Dict, Iterable
+from typing import Iterable
 
 from blessings import Terminal
 
@@ -80,7 +80,7 @@ def user_abort() -> int:
     return 1
 
 
-def clean(files: Dict[int, int], *, interactive: bool = True,
+def clean(files: dict[int, int], *, interactive: bool = True,
           simulate: bool = True):
     """Clean filedb records."""
 
@@ -122,7 +122,7 @@ def clean(files: Dict[int, int], *, interactive: bool = True,
     LOGGER.debug('Deleted: %i, kept: %i, updated: %i.', deleted, kept, updated)
 
 
-def make_clean(files: Dict[int, int], interactive: bool,
+def make_clean(files: dict[int, int], interactive: bool,
                simulate: bool) -> int:
     """Invoke cleaning securely."""
 
