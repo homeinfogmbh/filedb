@@ -3,7 +3,7 @@
 from __future__ import annotations
 from datetime import datetime
 from hashlib import sha256
-from typing import Iterator
+from typing import Iterator, Union
 
 from flask import Response
 from peewee import IntegrityError
@@ -52,27 +52,29 @@ class File(FileDBModel):
         return str(self.sha256sum)
 
     @classmethod
-    def by_sha256sum(cls, sha256sum: str) -> File:
+    def by_sha256sum(cls, sha256sum: Union[sha256, str]) -> File:
         """Returns a file by its SHA-256 sum."""
+        if isinstance(sha256sum, sha256):
+            return cls.by_sha256sum(sha256sum.hexdigest())
+
         return cls.select().where(cls.sha256sum == sha256sum).get()
 
     @classmethod
-    def _from_bytes(cls, bytes_: bytes, sha256sum: str, *, save: bool) -> File:
+    def _from_bytes(cls, bytes_: bytes, sha256sum: sha256, *,
+                    save: bool) -> File:
         """Creates a new file."""
         file = cls()
         file.bytes = bytes_
         file.mimetype = mimetype(bytes_)
-        file.sha256sum = sha256sum
+        file.sha256sum = sha256sum.hexdigest()
         file.size = len(bytes_)
         return file.save_unique() if save else file
 
     @classmethod
     def from_bytes(cls, bytes_: bytes, *, save: bool = False) -> File:
         """Creates a file from the given bytes."""
-        sha256sum = sha256(bytes_).hexdigest()
-
         try:
-            return cls.by_sha256sum(sha256sum)
+            return cls.by_sha256sum(sha256sum := sha256(bytes_))
         except cls.DoesNotExist:
             return cls._from_bytes(bytes_, sha256sum, save=save)
 
