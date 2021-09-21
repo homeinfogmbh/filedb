@@ -1,7 +1,7 @@
 """Common functions."""
 
 from re import search
-from typing import Tuple
+from typing import Optional
 
 from flask import request
 
@@ -9,16 +9,14 @@ from flask import request
 __all__ = ['get_range']
 
 
-def get_range() -> Tuple[int, int]:
+def get_range() -> tuple[int, Optional[int]]:
     """Gets the requested stream range."""
 
-    range = request.headers.get('Range')    # pylint: disable=W0622
-    start, end = (0, None)
+    if not (range_ := request.headers.get('Range')):
+        return (0, None)
 
-    if range:
-        match = search(r'(\d+)-(\d*)', range)
-        start, end = match.groups()
-        start = int(start) if start else 0
-        end = int(end) if end else None
-
+    match = search(r'(\d+)-(\d*)', range_)
+    start, end = match.groups()
+    start = int(start) if start else 0
+    end = int(end) if end else None
     return (start, end)
