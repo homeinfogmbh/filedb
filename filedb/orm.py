@@ -14,17 +14,16 @@ from peewee import DateTimeField
 from peewee import FixedCharField
 from peewee import IntegerField
 
-from peeweeplus import JSONModel, MySQLDatabase
+from peeweeplus import JSONModel, MySQLDatabaseProxy
 from mimeutil import mimetype, mimetype_to_ext
 
-from filedb.config import CONFIG
 from filedb.functions import get_range
 
 
 __all__ = ['META_FIELDS', 'File']
 
 
-DATABASE = MySQLDatabase.from_config(CONFIG['db'])
+DATABASE = MySQLDatabaseProxy('filedb')
 SHA256 = type(sha256())
 
 
