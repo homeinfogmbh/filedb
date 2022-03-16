@@ -28,11 +28,10 @@ DATABASE = MySQLDatabaseProxy('filedb')
 SHA256 = type(sha256())
 
 
-class FileDBModel(JSONModel):   # pylint: disable=R0903
+class FileDBModel(JSONModel):
     """A basic model for the file database."""
 
-    class Meta:     # pylint: disable=R0903
-        """Database and schema configuration."""
+    class Meta:
         database = DATABASE
         schema = database.database
 
@@ -61,8 +60,12 @@ class File(FileDBModel):
         return cls.select().where(cls.sha256sum == sha256sum).get()
 
     @classmethod
-    def _from_bytes(cls, bytes_: bytes, sha256sum: SHA256, *,
-                    save: bool) -> File:
+    def _from_bytes(
+            cls,
+            bytes_: bytes,
+            sha256sum: SHA256, *,
+            save: bool
+    ) -> File:
         """Creates a new file."""
         file = cls()
         file.bytes = bytes_
@@ -80,8 +83,12 @@ class File(FileDBModel):
             return cls._from_bytes(bytes_, sha256sum, save=save)
 
     @classmethod
-    def from_stream(cls, stream: Iterator[bytes], *,
-                    save: bool = False) -> File:
+    def from_stream(
+            cls,
+            stream: Iterator[bytes],
+            *,
+            save: bool = False
+    ) -> File:
         """Creates a file from the respective stream."""
         return cls.from_bytes(b''.join(stream), save=save)
 
@@ -104,7 +111,9 @@ class File(FileDBModel):
         return self.sha256sum + self.suffix
 
     def save_unique(self):
-        """Saves the file or returns an equivalent record by its SHA-256 sum."""
+        """Saves the file or returns an equivalent
+        record by its SHA-256 sum.
+        """
         try:
             self.save()
         except IntegrityError:
@@ -133,7 +142,8 @@ class File(FileDBModel):
 
         response = Response(
             chunk, 206, mimetype=self.mimetype, content_type=self.mimetype,
-            direct_passthrough=True)
+            direct_passthrough=True
+        )
         content_range = f'bytes {start}-{end}/{self.size}'
         response.headers.add('Content-Range', content_range)
         return response
