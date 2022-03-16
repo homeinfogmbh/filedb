@@ -3,7 +3,7 @@
 from __future__ import annotations
 from datetime import datetime
 from hashlib import sha256
-from typing import Iterator, Union
+from typing import Iterable, Iterator, Union
 
 from flask import Response
 from peewee import IntegrityError
@@ -11,6 +11,7 @@ from peewee import BigIntegerField
 from peewee import BlobField
 from peewee import CharField
 from peewee import DateTimeField
+from peewee import Field
 from peewee import FixedCharField
 from peewee import IntegerField
 
@@ -84,6 +85,14 @@ class File(FileDBModel):
         """Creates a file from the respective stream."""
         return cls.from_bytes(b''.join(stream), save=save)
 
+    @classmethod
+    def meta_fields(cls) -> Iterable[Field]:
+        """Returns an iterable of metadata fields."""
+        return (
+            cls.id, cls.mimetype, cls.sha256sum, cls.size, cls.created,
+            cls.last_access, cls.accessed
+        )
+
     @property
     def suffix(self) -> str:
         """Returns the file suffix."""
@@ -130,12 +139,4 @@ class File(FileDBModel):
         return response
 
 
-META_FIELDS = (
-    File.id,
-    File.mimetype,
-    File.sha256sum,
-    File.size,
-    File.created,
-    File.last_access,
-    File.accessed
-)
+META_FIELDS = File.meta_fields()
