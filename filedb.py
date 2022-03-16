@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 from datetime import datetime
+from functools import partial
 from hashlib import sha256
 from typing import Iterable, Iterator, Union
 
 from flask import Response
+from peewee import FieldAlias
 from peewee import IntegrityError
 from peewee import ModelAlias
 from peewee import BigIntegerField
@@ -96,7 +98,10 @@ class File(FileDBModel):
     def meta_fields(cls) -> Iterable[Field]:
         """Returns an iterable of metadata fields."""
         if isinstance(cls, ModelAlias):
-            cls.get_field_aliases()     # Trigger field alias generation.
+            return tuple(map(partial(FieldAlias.create, cls), (
+                cls.id, cls.mimetype, cls.sha256sum, cls.size, cls.created,
+                cls.last_access, cls.accessed
+            )))
 
         return (
             cls.id, cls.mimetype, cls.sha256sum, cls.size, cls.created,
