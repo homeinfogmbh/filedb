@@ -7,6 +7,7 @@ from typing import Iterable, Iterator, Union
 
 from flask import Response
 from peewee import IntegrityError
+from peewee import ModelAlias
 from peewee import BigIntegerField
 from peewee import BlobField
 from peewee import CharField
@@ -94,6 +95,9 @@ class File(FileDBModel):
     @classmethod
     def meta_fields(cls) -> Iterable[Field]:
         """Returns an iterable of metadata fields."""
+        if isinstance(cls, ModelAlias):
+            cls.get_field_aliases()     # Trigger field alias generation.
+
         return (
             cls.id, cls.mimetype, cls.sha256sum, cls.size, cls.created,
             cls.last_access, cls.accessed
