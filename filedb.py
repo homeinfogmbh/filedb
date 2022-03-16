@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 from datetime import datetime
-from functools import partial
 from hashlib import sha256
-from typing import Iterable, Iterator, Union
+from typing import Iterable, Iterator, Optional, Union
 
 from flask import Response
-from peewee import FieldAlias
 from peewee import IntegrityError
 from peewee import ModelAlias
 from peewee import BigIntegerField
@@ -28,6 +26,17 @@ __all__ = ['META_FIELDS', 'File']
 
 DATABASE = MySQLDatabaseProxy('filedb')
 SHA256 = type(sha256())
+
+
+class FileModelAlias(ModelAlias):
+    """Alias type for File model."""
+
+    def meta_fields(self) -> Iterable[Field]:
+        """Returns an iterable of metadata field aliases."""
+        return (
+            self.id, self.mimetype, self.sha256sum, self.size, self.created,
+            self.last_access, self.accessed
+        )
 
 
 class FileDBModel(JSONModel):
@@ -95,14 +104,13 @@ class File(FileDBModel):
         return cls.from_bytes(b''.join(stream), save=save)
 
     @classmethod
+    def alias(cls, alias: Optional[str] = None) -> FileModelAlias:
+        """Return a file model alias."""
+        return FileModelAlias(cls, alias)
+
+    @classmethod
     def meta_fields(cls) -> Iterable[Field]:
         """Returns an iterable of metadata fields."""
-        if isinstance(cls, ModelAlias):
-            return tuple(map(partial(FieldAlias.create, cls), (
-                cls.id, cls.mimetype, cls.sha256sum, cls.size, cls.created,
-                cls.last_access, cls.accessed
-            )))
-
         return (
             cls.id, cls.mimetype, cls.sha256sum, cls.size, cls.created,
             cls.last_access, cls.accessed
