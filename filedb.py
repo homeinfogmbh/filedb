@@ -6,6 +6,7 @@ from hashlib import sha256
 from typing import Iterable, Iterator, Optional, Union
 
 from flask import Response
+from peewee import FieldAlias
 from peewee import IntegrityError
 from peewee import ModelAlias
 from peewee import BigIntegerField
@@ -31,7 +32,7 @@ SHA256 = type(sha256())
 class FileModelAlias(ModelAlias):
     """Alias type for File model."""
 
-    def meta_fields(self) -> Iterable[Field]:
+    def meta_fields(self) -> Iterable[FieldAlias]:
         """Returns an iterable of metadata field aliases."""
         return (
             self.id, self.mimetype, self.sha256sum, self.size, self.created,
