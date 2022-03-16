@@ -15,10 +15,9 @@ from peewee import Field
 from peewee import FixedCharField
 from peewee import IntegerField
 
-from peeweeplus import JSONModel, MySQLDatabaseProxy
 from mimeutil import mimetype, mimetype_to_ext
-
-from filedb.functions import get_range
+from peeweeplus import JSONModel, MySQLDatabaseProxy
+from wsgilib import get_range
 
 
 __all__ = ['META_FIELDS', 'File']
