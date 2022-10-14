@@ -21,5 +21,10 @@ setup(
         'wsgilib'
     ],
     py_modules=['filedb'],
+    entry_points={
+        'console_scripts': [
+            'filedb-cleanup = filedb:cleanup'
+        ]
+    },
     description='Centralized file database.'
 )
