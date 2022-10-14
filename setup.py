@@ -21,6 +21,12 @@ setup(
         'wsgilib'
     ],
     py_modules=['filedb'],
+    data_files=[
+        ('/usr/lib/systemd/system', [
+            'filedb-cleanup.service',
+            'filedb-cleanup.timer'
+        ])
+    ],
     entry_points={
         'console_scripts': [
             'filedb-cleanup = filedb:cleanup',
