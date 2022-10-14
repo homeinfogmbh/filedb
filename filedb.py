@@ -182,7 +182,7 @@ def cleanup() -> None:
         try:
             file.delete_instance()
         except IntegrityError:
-            LOGGER.warning('File %i is in use.', file.id)
+            LOGGER.debug('File %i is in use.', file.id)
         else:
             LOGGER.info('Deleted file: %i (%i bytes)', file.id, file.size)
 
