@@ -127,7 +127,7 @@ class File(FileDBModel):
         """Returns a unique file name from the SHA-256 hash and suffix."""
         return self.sha256sum + self.suffix
 
-    def save_unique(self):
+    def save_unique(self) -> File:
         """Saves the file or returns an equivalent
         record by its SHA-256 sum.
         """
@@ -138,7 +138,7 @@ class File(FileDBModel):
 
         return self
 
-    def touch(self):
+    def touch(self) -> None:
         """Update access counters."""
         self.accessed += 1
         self.last_access = datetime.now()
