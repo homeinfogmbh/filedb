@@ -23,7 +23,8 @@ setup(
     py_modules=['filedb'],
     entry_points={
         'console_scripts': [
-            'filedb-cleanup = filedb:cleanup'
+            'filedb-cleanup = filedb:cleanup',
+            'filedb-top = filedb:top'
         ]
     },
     description='Centralized file database.'
