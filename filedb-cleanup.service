@@ -1,0 +1,7 @@
+[Unit]
+Description=Remove unused files in filedb
+Requires=mysql.service
+After=mysql.service
+
+[Service]
+ExecStart=/usr/local/bin/filedb-cleanup

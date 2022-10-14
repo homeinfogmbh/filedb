@@ -1,0 +1,9 @@
+[Unit]
+Description=Daily removal of unused files in filedb
+
+[Timer]
+OnCalendar=daily
+RandomizedDelaySec=5h
+
+[Install]
+WantedBy=timers.target
