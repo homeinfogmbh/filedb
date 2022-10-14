@@ -4,6 +4,7 @@ from __future__ import annotations
 from datetime import datetime
 from hashlib import sha256
 from logging import INFO, basicConfig, getLogger
+from sys import stderr
 from typing import Iterable, Iterator, Optional, Union
 
 from flask import Response
@@ -194,4 +195,8 @@ def top() -> None:
     for file in File.select(*META_FIELDS).order_by(
             File.size.desc()
     ).iterator():
-        LOGGER.info('%i: %i bytes', file.id, file.size)
+        try:
+            print(file.id, '->', file.size, 'bytes', flush=True)
+        except BrokenPipeError:
+            stderr.close()
+            break
