@@ -53,7 +53,7 @@ class File(FileDBModel):
 
     bytes = BlobField()
     mimetype = CharField(255)
-    sha256sum = FixedCharField(64)
+    sha256sum = FixedCharField(64, unique=True)
     size = BigIntegerField()   # File size in bytes.
     created = DateTimeField(default=datetime.now)
     last_access = DateTimeField(null=True, default=None)
