@@ -183,3 +183,14 @@ def cleanup() -> None:
             LOGGER.debug('File %i is in use.', file.id)
         else:
             LOGGER.info('Deleted file: %i (%i bytes)', file.id, file.size)
+
+
+def top() -> None:
+    """List biggest files."""
+
+    basicConfig(level=INFO, format='[%(levelname)s] %(name)s: %(message)s')
+
+    for file in File.select(*META_FIELDS).order_by(
+            File.size.desc()
+    ).iterator():
+        LOGGER.info('%i: %i bytes', file.id, file.size)
