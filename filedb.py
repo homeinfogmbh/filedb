@@ -3,6 +3,7 @@
 from __future__ import annotations
 from datetime import datetime
 from hashlib import sha256
+from logging import INFO, basicConfig, getLogger
 from typing import Iterable, Iterator, Optional, Union
 
 from flask import Response
@@ -22,10 +23,11 @@ from peeweeplus import JSONModel, MySQLDatabaseProxy
 from wsgilib import get_range
 
 
-__all__ = ['META_FIELDS', 'File']
+__all__ = ['META_FIELDS', 'File', 'cleanup']
 
 
 DATABASE = MySQLDatabaseProxy('filedb')
+LOGGER = getLogger('filedb')
 SHA256 = type(sha256())
 
 
@@ -167,3 +169,17 @@ class File(FileDBModel):
 
 
 META_FIELDS = File.meta_fields()
+
+
+def cleanup() -> None:
+    """Remove unused files in filedb."""
+
+    basicConfig(level=INFO, format='[%(levelname)s] %(name)s: %(message)s')
+
+    for file in File.select().iterator():
+        try:
+            file.delete_instance()
+        except IntegrityError:
+            LOGGER.debug('File %i is in use.', file.id)
+        else:
+            LOGGER.info('Deleted file: %i (%i bytes)', file.id, file.size)
