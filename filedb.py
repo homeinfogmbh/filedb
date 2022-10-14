@@ -27,6 +27,7 @@ __all__ = ['META_FIELDS', 'File', 'cleanup']
 
 
 DATABASE = MySQLDatabaseProxy('filedb')
+LOG_FORMAT = '[%(levelname)s] %(name)s: %(message)s'
 LOGGER = getLogger('filedb')
 SHA256 = type(sha256())
 
@@ -174,7 +175,7 @@ META_FIELDS = File.meta_fields()
 def cleanup() -> None:
     """Remove unused files in filedb."""
 
-    basicConfig(level=INFO, format='[%(levelname)s] %(name)s: %(message)s')
+    basicConfig(level=INFO, format=LOG_FORMAT)
 
     for file in File.select(*META_FIELDS).iterator():
         try:
@@ -188,7 +189,7 @@ def cleanup() -> None:
 def top() -> None:
     """List biggest files."""
 
-    basicConfig(level=INFO, format='[%(levelname)s] %(name)s: %(message)s')
+    basicConfig(level=INFO, format=LOG_FORMAT)
 
     for file in File.select(*META_FIELDS).order_by(
             File.size.desc()
