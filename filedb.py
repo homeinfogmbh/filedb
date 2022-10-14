@@ -176,7 +176,7 @@ def cleanup() -> None:
 
     basicConfig(level=INFO, format='[%(levelname)s] %(name)s: %(message)s')
 
-    for file in File.select().iterator():
+    for file in File.select(*META_FIELDS).iterator():
         try:
             file.delete_instance()
         except IntegrityError:
