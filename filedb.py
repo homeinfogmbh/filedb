@@ -24,12 +24,12 @@ from peeweeplus import JSONModel, MySQLDatabaseProxy
 from wsgilib import get_range
 
 
-__all__ = ['META_FIELDS', 'File', 'cleanup']
+__all__ = ["META_FIELDS", "File", "cleanup"]
 
 
-DATABASE = MySQLDatabaseProxy('filedb')
-LOG_FORMAT = '[%(levelname)s] %(name)s: %(message)s'
-LOGGER = getLogger('filedb')
+DATABASE = MySQLDatabaseProxy("filedb")
+LOG_FORMAT = "[%(levelname)s] %(name)s: %(message)s"
+LOGGER = getLogger("filedb")
 SHA256 = type(sha256())
 
 
@@ -39,8 +39,13 @@ class FileModelAlias(ModelAlias):
     def meta_fields(self) -> Iterable[FieldAlias]:
         """Returns an iterable of metadata field aliases."""
         return (
-            self.id, self.mimetype, self.sha256sum, self.size, self.created,
-            self.last_access, self.accessed
+            self.id,
+            self.mimetype,
+            self.sha256sum,
+            self.size,
+            self.created,
+            self.last_access,
+            self.accessed,
         )
 
 
@@ -58,7 +63,7 @@ class File(FileDBModel):
     bytes = BlobField()
     mimetype = CharField(255)
     sha256sum = FixedCharField(64, unique=True)
-    size = BigIntegerField()   # File size in bytes.
+    size = BigIntegerField()  # File size in bytes.
     created = DateTimeField(default=datetime.now)
     last_access = DateTimeField(null=True, default=None)
     accessed = IntegerField(default=0)
@@ -76,12 +81,7 @@ class File(FileDBModel):
         return cls.select().where(cls.sha256sum == sha256sum).get()
 
     @classmethod
-    def _from_bytes(
-            cls,
-            bytes_: bytes,
-            sha256sum: SHA256, *,
-            save: bool
-    ) -> File:
+    def _from_bytes(cls, bytes_: bytes, sha256sum: SHA256, *, save: bool) -> File:
         """Creates a new file."""
         file = cls()
         file.bytes = bytes_
@@ -99,14 +99,9 @@ class File(FileDBModel):
             return cls._from_bytes(bytes_, sha256sum, save=save)
 
     @classmethod
-    def from_stream(
-            cls,
-            stream: Iterator[bytes],
-            *,
-            save: bool = False
-    ) -> File:
+    def from_stream(cls, stream: Iterator[bytes], *, save: bool = False) -> File:
         """Creates a file from the respective stream."""
-        return cls.from_bytes(b''.join(stream), save=save)
+        return cls.from_bytes(b"".join(stream), save=save)
 
     @classmethod
     def alias(cls, alias: Optional[str] = None) -> FileModelAlias:
@@ -117,8 +112,13 @@ class File(FileDBModel):
     def meta_fields(cls) -> Iterable[Field]:
         """Returns an iterable of metadata fields."""
         return (
-            cls.id, cls.mimetype, cls.sha256sum, cls.size, cls.created,
-            cls.last_access, cls.accessed
+            cls.id,
+            cls.mimetype,
+            cls.sha256sum,
+            cls.size,
+            cls.created,
+            cls.last_access,
+            cls.accessed,
         )
 
     @property
@@ -162,11 +162,14 @@ class File(FileDBModel):
             end = self.size - 1
 
         response = Response(
-            chunk, 206, mimetype=self.mimetype, content_type=self.mimetype,
-            direct_passthrough=True
+            chunk,
+            206,
+            mimetype=self.mimetype,
+            content_type=self.mimetype,
+            direct_passthrough=True,
         )
-        content_range = f'bytes {start}-{end}/{self.size}'
-        response.headers.add('Content-Range', content_range)
+        content_range = f"bytes {start}-{end}/{self.size}"
+        response.headers.add("Content-Range", content_range)
         return response
 
 
@@ -182,9 +185,9 @@ def cleanup() -> None:
         try:
             file.delete_instance()
         except IntegrityError:
-            LOGGER.debug('File %i is in use.', file.id)
+            LOGGER.debug("File %i is in use.", file.id)
         else:
-            LOGGER.info('Deleted file: %i (%i bytes)', file.id, file.size)
+            LOGGER.info("Deleted file: %i (%i bytes)", file.id, file.size)
 
 
 def top() -> None:
@@ -192,11 +195,9 @@ def top() -> None:
 
     basicConfig(level=INFO, format=LOG_FORMAT)
 
-    for file in File.select(*META_FIELDS).order_by(
-            File.size.desc()
-    ).iterator():
+    for file in File.select(*META_FIELDS).order_by(File.size.desc()).iterator():
         try:
-            print(file.id, '->', file.size, 'bytes', flush=True)
+            print(file.id, "->", file.size, "bytes", flush=True)
         except BrokenPipeError:
             stderr.close()
             break
