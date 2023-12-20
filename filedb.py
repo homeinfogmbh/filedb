@@ -104,6 +104,12 @@ class File(FileDBModel):
         """Creates a file from the respective stream."""
         return cls.from_bytes(b"".join(stream), save=save)
 
+    @property
+    def _bytes(self):
+        if self.filepath:
+            f = open(self.filepath, "r")
+            return f.read()
+        return self.bytes
     @classmethod
     def alias(cls, alias: Optional[str] = None) -> FileModelAlias:
         """Return a file model alias."""
