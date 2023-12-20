@@ -107,7 +107,7 @@ class File(FileDBModel):
     @property
     def _bytes(self):
         if self.filepath:
-            f = open(self.filepath, "r")
+            f = open(self.filepath, "rb")
             return f.read()
         return self.bytes
     @classmethod
