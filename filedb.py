@@ -67,6 +67,7 @@ class File(FileDBModel):
     created = DateTimeField(default=datetime.now)
     last_access = DateTimeField(null=True, default=None)
     accessed = IntegerField(default=0)
+    filepath=CharField(255)
 
     def __str__(self):
         """Converts the file to a string."""
