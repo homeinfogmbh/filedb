@@ -22,7 +22,7 @@ from peewee import IntegerField
 from mimeutil import mimetype, mimetype_to_ext
 from peeweeplus import JSONModel, MySQLDatabaseProxy
 from wsgilib import get_range
-
+import os
 
 __all__ = ["META_FIELDS", "File", "cleanup"]
 
@@ -60,7 +60,7 @@ class FileDBModel(JSONModel):
 class File(FileDBModel):
     """A file entry."""
 
-    bytes = BlobField()
+
     mimetype = CharField(255)
     sha256sum = FixedCharField(64, unique=True)
     size = BigIntegerField()  # File size in bytes.
@@ -105,11 +105,24 @@ class File(FileDBModel):
         return cls.from_bytes(b"".join(stream), save=save)
 
     @property
-    def _bytes(self):
+    def bytes(self):
         if self.filepath:
             f = open(self.filepath, "rb")
             return f.read()
-        return self.bytes
+
+    @bytes.setter
+    def bytes(self, value):
+        f = open(self.filepath, "wb")
+        f.write(value)
+        f.close()
+        self.filepath = "/usr/share/files/" + str(self.id)
+
+    @bytes.deleter
+    def bytes(self):
+        if self.filepath:
+            os.unlink("/usr/share/files/" + str(self.id))
+
+
     @classmethod
     def alias(cls, alias: Optional[str] = None) -> FileModelAlias:
         """Return a file model alias."""
