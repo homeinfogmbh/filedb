@@ -113,7 +113,7 @@ class File(FileDBModel):
     @bytes.setter
     def bytes(self, value):
 
-        self.filepath = "/usr/share/files/" + self.filename
+        self.filepath = "/usr/share/files/" + sha256(value).hexdigest()
         f = open(self.filepath, "wb")
         f.write(value)
         f.close()
