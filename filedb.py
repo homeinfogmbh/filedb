@@ -85,10 +85,10 @@ class File(FileDBModel):
     def _from_bytes(cls, bytes_: bytes, sha256sum: SHA256, *, save: bool) -> File:
         """Creates a new file."""
         file = cls()
-        file.bytes = bytes_
         file.mimetype = mimetype(bytes_)
         file.sha256sum = sha256sum.hexdigest()
         file.size = len(bytes_)
+        file.bytes = bytes_
         return file.save_unique() if save else file
 
     @classmethod
@@ -112,7 +112,8 @@ class File(FileDBModel):
 
     @bytes.setter
     def bytes(self, value):
-        self.filepath = "/usr/share/files/" + str(sha256(value))
+
+        self.filepath = "/usr/share/files/" + self.filename
         f = open(self.filepath, "wb")
         f.write(value)
         f.close()
@@ -121,7 +122,7 @@ class File(FileDBModel):
     @bytes.deleter
     def bytes(self):
         if self.filepath:
-            os.unlink("/usr/share/files/" + str(self.id))
+            os.unlink(self.filepath)
 
 
     @classmethod
